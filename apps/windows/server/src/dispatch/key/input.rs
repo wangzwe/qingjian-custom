@@ -177,7 +177,9 @@ impl Router {
                 }
             }
             // 高亮还在第一个、没动过时 ↑ 没处可去，拿来开符号面板（矩阵开着时也一样，`↓` 照旧展开矩阵）
-            codes::UP if self.open_panel_from_key() => Effect::Navigated,
+            codes::UP if !self.reversed_candidates() && self.open_panel_from_key() => {
+                Effect::Navigated
+            }
             codes::UP => {
                 if self.config.grid_keys() {
                     // ↑ 顶在第一排再往上：回到第一个候选（不是毫无动作）
@@ -213,9 +215,18 @@ impl Router {
 
     /// `↑` / `↓`：按 `[shortcut] highlight_keys` 移高亮。高亮键配成 `←` / `→` 时它俩没活干，
     /// 这一下吃掉但不动——不吃掉会漏给应用去挪插入符。
+    fn reversed_candidates(&self) -> bool {
+        self.config.layout == qingjian_platform::LayoutMode::Vertical
+            && self.candidates.vertical_reversed()
+    }
+
     fn vertical_key(&mut self, step: isize) -> Effect {
         if self.config.highlight_keys == HighlightKeys::UpDown {
-            self.move_highlight(step);
+            self.move_highlight(if self.reversed_candidates() {
+                -step
+            } else {
+                step
+            });
         }
         Effect::Navigated
     }

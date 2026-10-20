@@ -3,6 +3,16 @@
 CLAUDE.md 只保留目录地图与规则，每个 crate / app / tool 的实现细节收在这里：入口类型、数据文件、常数、生成命令。
 改了实现要同步改这里；与代码冲突时以代码为准。
 
+Windows 解压版：`qingjian-platform/src/dirs/portable.rs` 仅在 Server／新旧设置程序旁存在 `qingjian-portable.txt` 时，把用户目录改为同级 `userdata`。按可执行文件目录识别并缓存，不依赖启动器环境变量，因此 TSF 自动拉起 Server 时也使用便携数据；DLL 的宿主程序不会触发识别。诊断日志仍在 `%LOCALAPPDATA%\Qingjian\logs`。`apps/windows/portable` 提供启停脚本与按 Inno 文件清单打 ZIP 的工具；注册仍需管理员，拒绝覆盖其他目录的 CLSID，停用不删除用户数据，不创建开机启动项。
+
+Windows 候选外观扩展：`general.candidate_font` / `annotation_font`、`candidate_bold` / `annotation_bold`、两组 `*_color` / `*_highlight_color` 经 `RenderSettings` 热加载，在 `Theme::with_text_style` 里覆盖对应命名样式；颜色只作用于候选正文或译文，拼音、序号、状态条不受影响。设置预览随配置失效并加载相应系统字族。`candidate_gap = -1` 保留阴影避让，0–40 是按 DPI 缩放的内容边缘间距。
+
+`candidate_background`、`candidate_padding`、`candidate_row_padding`、`candidate_row_gap`、`candidate_shadow` 由 `Theme::with_candidate_box` 应用到候选框；阴影默认关闭。独立样式下表格不再追加基线补偿，各候选格采用对称留白与垂直居中，普通主题与其他平台的基础渲染接口保持原样。Windows UI 用共享原子布尔值将最终显示方向提供给 `CandidateSink::vertical_reversed`，Router 仅在竖排时反向映射上下键；符号面板和横排矩阵仍走各自逻辑。
+
+`annotation_table`（默认 true）、`annotation_gap`（默认 8，0–64）、`annotation_pos_after`（默认 true）经同一热加载链路传到 `Theme::with_annotation_layout`。固定间距模式只复制竖排行组件，将 table 改为逐行 flex、跨列高亮改为绝对定位，逐行按中文实际宽度放置译文；横排、状态条与原主题不变。`renderer/build/annotation_order` 在片段筛选后按义项移动词性，保留原义项编号，分隔符仍在相邻义项之间，单独词性行不改动。配置入口在 Windows 外观页「译文排布」，其他平台仍使用主题原布局。
+
+`Renderer::render_vertical_reversed` 反转竖排根容器与候选行的视觉布局，保留帧的逻辑下标，高亮和点击区域由重新布局后的节点生成。Windows 先根据上一显示方向排版，定位确认窗口完全位于输入行上方后，必要时重新排版；跨方向时不配对上一方向的动画。GDI 回退同样反转整行位置，字形不翻转。
+
 ## crates/qingjian-dictionary
 
 词库（TSV 解析或 `.qj` mmap），键按字节序排好，查询逐音节位置二分收窄（简拼位置按音节块跳扫），

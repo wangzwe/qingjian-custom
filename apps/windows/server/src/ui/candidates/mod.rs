@@ -3,6 +3,8 @@
 //! 配色 / 字体在 [`theme`]。绘制内容在 [`RenderData`]，一行的展示形态在 [`row`]。设计语言对齐 macOS 端。
 
 mod click;
+#[cfg(test)]
+mod placement_tests;
 mod render_data;
 pub(crate) mod row;
 pub(crate) mod theme;
@@ -81,6 +83,12 @@ pub(crate) struct CandidateWindow {
 
     /// 最近一次贴图时窗口左上角的屏幕坐标；动画帧贴在同一处。
     position: Cell<(i32, i32)>,
+
+    reversed: Cell<bool>,
+
+    gap: Cell<i32>,
+
+    shadow: Cell<bool>,
 }
 
 impl CandidateWindow {
@@ -122,7 +130,25 @@ impl CandidateWindow {
             logged_dpi: Cell::new(None),
             painter,
             position: Cell::new((0, 0)),
+            reversed: Cell::new(false),
+            gap: Cell::new(-1),
+            shadow: Cell::new(false),
         })
+    }
+
+    pub(crate) fn configure_gap(&self, gap: i32, shadow: bool) {
+        self.gap.set(gap.clamp(-1, 40));
+        self.shadow.set(shadow);
+    }
+
+    fn place(&self, anchor: RECT, content: (i32, i32), overhang: (i32, i32)) -> (i32, i32) {
+        let work = monitor::work_area_near(POINT {
+            x: anchor.left,
+            y: anchor.top,
+        });
+        let gap = (self.gap.get() >= 0)
+            .then(|| (self.gap.get() as f32 * self.dpi.get() as f32 / 96.0).round() as i32);
+        place_in_work_area(anchor, content, overhang, work, gap)
     }
 
     /// 刷新内容（不定位、不显示）。
@@ -133,7 +159,9 @@ impl CandidateWindow {
     /// 按光标矩形定位并显示：贴光标下方（放不下放上方），四周留出阴影。
     pub(crate) fn show(&self, anchor: RECT) {
         self.sync_theme(anchor);
-        let rendered = {
+        let vertical = self.data.borrow().layout == qingjian_platform::LayoutMode::Vertical;
+        let reversed = vertical && self.reversed.get();
+        let mut rendered = {
             let data = self.data.borrow();
             self.painter.borrow_mut().as_mut().and_then(|painter| {
                 painter.render_frame(
@@ -141,9 +169,32 @@ impl CandidateWindow {
                     data.layout,
                     self.dark.get(),
                     self.dpi.get(),
+                    reversed,
                 )
             })
         };
+        if let Some(bitmap) = &rendered {
+            let content = (bitmap.content_width as i32, bitmap.content_height as i32);
+            let overhang = (
+                bitmap.content_y as i32,
+                bitmap.pixmap.height() as i32 - bitmap.content_y as i32 - content.1,
+            );
+            let (_, y) = self.place(anchor, content, overhang);
+            let wanted = vertical && nearer_bottom(anchor, y, content.1);
+            self.reversed.set(wanted);
+            if wanted != reversed {
+                let data = self.data.borrow();
+                rendered = self.painter.borrow_mut().as_mut().and_then(|painter| {
+                    painter.render_frame(
+                        &data.render_frame(),
+                        data.layout,
+                        self.dark.get(),
+                        self.dpi.get(),
+                        wanted,
+                    )
+                });
+            }
+        }
         let updated = match rendered {
             Some(rendered) => {
                 let content = (
@@ -158,7 +209,7 @@ impl CandidateWindow {
                     rendered.content_y as i32,
                     rendered.pixmap.height() as i32 - rendered.content_y as i32 - content.1,
                 );
-                let (content_x, content_y) = place(anchor, content, overhang);
+                let (content_x, content_y) = self.place(anchor, content, overhang);
                 let position = (
                     content_x - rendered.content_x as i32,
                     content_y - rendered.content_y as i32,
@@ -182,13 +233,21 @@ impl CandidateWindow {
 
     /// GDI 画法：量尺寸、定位、合成。
     fn show_gdi(&self, anchor: RECT) -> Result<()> {
-        let margin = layered::shadow_margin(self.dpi.get());
+        let margin = if self.shadow.get() {
+            layered::shadow_margin(self.dpi.get())
+        } else {
+            0
+        };
         let content = self.preferred_size();
         if content.0 <= 0 || content.1 <= 0 {
             return Err(Error::from(E_INVALIDARG));
         }
         // GDI 画法的投影顶影为 0，只有底边那一圈要避
-        let (content_x, content_y) = place(anchor, content, (0, margin));
+        let (content_x, content_y) = self.place(anchor, content, (0, margin));
+        let reversed = self.data.borrow().layout == qingjian_platform::LayoutMode::Vertical
+            && nearer_bottom(anchor, content_y, content.1);
+        self.reversed.set(reversed);
+        self.data.borrow_mut().reversed = reversed;
         let data = self.data.borrow();
         layered::composite(
             self.hwnd,
@@ -204,7 +263,12 @@ impl CandidateWindow {
         )
     }
 
+    pub(super) fn is_reversed(&self) -> bool {
+        self.reversed.get()
+    }
+
     pub(crate) fn hide(&self) {
+        self.reversed.set(false);
         let _ = unsafe { ShowWindow(self.hwnd, SW_HIDE) };
         click::set_hits(Vec::new(), (0, 0));
         self.stop_animation();
@@ -316,11 +380,30 @@ pub(super) fn place(anchor: RECT, content: (i32, i32), overhang: (i32, i32)) -> 
         x: anchor.left,
         y: anchor.top,
     });
+    place_in_work_area(anchor, content, overhang, work, None)
+}
+
+/// 按最终位置判断哪条边更靠近输入行，包括窗口过高而被工作区夹住的情况。
+fn nearer_bottom(anchor: RECT, top: i32, height: i32) -> bool {
+    let bottom_distance = (i64::from(top) + i64::from(height) - i64::from(anchor.top)).abs();
+    let top_distance = (i64::from(top) - i64::from(anchor.bottom)).abs();
+    bottom_distance < top_distance
+}
+
+/// 自定义间距以内容边缘为准，不再叠加透明阴影的外扩距离。
+/// 放不下时按工作区裁定位置，方向由最终位置另行判断。
+fn place_in_work_area(
+    anchor: RECT,
+    content: (i32, i32),
+    overhang: (i32, i32),
+    work: RECT,
+    gap: Option<i32>,
+) -> (i32, i32) {
     let x = anchor
         .left
         .clamp(work.left, (work.right - content.0).max(work.left));
-    let below = anchor.bottom + CARET_GAP + overhang.0.max(0);
-    let above = anchor.top - CARET_GAP - overhang.1.max(0) - content.1;
+    let below = anchor.bottom + gap.unwrap_or(CARET_GAP + overhang.0.max(0));
+    let above = anchor.top - gap.unwrap_or(CARET_GAP + overhang.1.max(0)) - content.1;
     let y = if below + content.1 <= work.bottom {
         below
     } else if above >= work.top {

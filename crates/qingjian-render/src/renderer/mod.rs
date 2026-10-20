@@ -90,6 +90,28 @@ impl Renderer {
         scale: f32,
         now: Instant,
     ) -> Result<Rendered, RenderError> {
+        self.render_oriented_at(frame, layout, theme, scale, now, false)
+    }
+
+    /// 上方竖排：只反转窗口内的排列，候选编号与点击目标不变。
+    pub fn render_vertical_reversed(
+        &mut self,
+        frame: &Frame,
+        theme: &Theme,
+        scale: f32,
+    ) -> Result<Rendered, RenderError> {
+        self.render_oriented_at(frame, Layout::Vertical, theme, scale, Instant::now(), true)
+    }
+
+    fn render_oriented_at(
+        &mut self,
+        frame: &Frame,
+        layout: Layout,
+        theme: &Theme,
+        scale: f32,
+        now: Instant,
+        reverse_vertical: bool,
+    ) -> Result<Rendered, RenderError> {
         self.text().use_families(theme.families());
         self.stage.set_animations(theme.animations());
         let mut scene = Scene::new();
@@ -98,6 +120,7 @@ impl Renderer {
             theme,
             scale,
             text: self.stage.text(),
+            reverse_vertical,
             cell_nodes: Vec::new(),
             candidate_nodes: Vec::new(),
             sense_nodes: Vec::new(),
@@ -107,9 +130,14 @@ impl Renderer {
         let content = scene.layout(root, self.stage.text())?;
         self.hits = hit_regions(&scene, root, &candidate_nodes, &sense_nodes)?;
         // 排布变了位置不可比，不与上一帧配对过渡
-        let painted = self
-            .stage
-            .present(scene, root, content, layout as u64, scale, now)?;
+        let painted = self.stage.present(
+            scene,
+            root,
+            content,
+            layout as u64 + if reverse_vertical { 2 } else { 0 },
+            scale,
+            now,
+        )?;
         Ok(Rendered::new(painted, self.hits.clone()))
     }
 

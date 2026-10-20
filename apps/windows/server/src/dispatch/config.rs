@@ -47,8 +47,36 @@ pub struct RouterConfig {
     /// 候选字、译文字号（`[general] candidate_font_size` / `annotation_font_size`）。
     pub font_sizes: (FontSize, FontSize),
 
+    /// 候选、译文各自的字族、加粗、普通色与选中色。
+    pub text_styles: [(String, bool, String, String); 2],
+
     /// 过渡动画（`[general] animations`）。
     pub animations: bool,
+
+    pub candidate_gap: i32,
+
+    /// 候选框背景色；空值跟随主题。
+    pub candidate_background: String,
+
+    /// 整框内边距、每条候选内边距；-1 跟随主题，0–32 逻辑像素。
+    pub candidate_padding: i32,
+
+    pub candidate_row_padding: i32,
+
+    /// 候选行间距，0–24 逻辑像素。
+    pub candidate_row_gap: i32,
+
+    /// 候选框边缘阴影，默认关闭。
+    pub candidate_shadow: bool,
+
+    /// 竖排译文按表格共享列宽；关闭后每行独立排布。
+    pub annotation_table: bool,
+
+    /// 固定排布时，候选与译文间的逻辑像素距离，0–64。
+    pub annotation_gap: i32,
+
+    /// 词性放在每条译文后面。
+    pub annotation_pos_after: bool,
 
     /// 用户主题目录的戳，热加载轮询时更新；不来自配置文件，重读配置时沿用。
     pub themes_stamp: u64,
@@ -155,7 +183,17 @@ impl RouterConfig {
             font: self.font.clone(),
             theme: self.theme.clone(),
             font_sizes: self.font_sizes,
+            text_styles: self.text_styles.clone(),
             animations: self.animations,
+            candidate_gap: self.candidate_gap,
+            candidate_background: self.candidate_background.clone(),
+            candidate_padding: self.candidate_padding,
+            candidate_row_padding: self.candidate_row_padding,
+            candidate_row_gap: self.candidate_row_gap,
+            candidate_shadow: self.candidate_shadow,
+            annotation_table: self.annotation_table,
+            annotation_gap: self.annotation_gap,
+            annotation_pos_after: self.annotation_pos_after,
             themes_stamp: self.themes_stamp,
         }
     }
@@ -179,7 +217,30 @@ impl From<&Config> for RouterConfig {
                 config.general.candidate_font_size,
                 config.general.annotation_font_size,
             ),
+            text_styles: [
+                (
+                    config.general.candidate_font.clone(),
+                    config.general.candidate_bold,
+                    config.general.candidate_color.clone(),
+                    config.general.candidate_highlight_color.clone(),
+                ),
+                (
+                    config.general.annotation_font.clone(),
+                    config.general.annotation_bold,
+                    config.general.annotation_color.clone(),
+                    config.general.annotation_highlight_color.clone(),
+                ),
+            ],
             animations: config.general.animations,
+            candidate_gap: config.general.candidate_gap.clamp(-1, 40),
+            candidate_background: config.general.candidate_background.clone(),
+            candidate_padding: config.general.candidate_padding.clamp(-1, 32),
+            candidate_row_padding: config.general.candidate_row_padding.clamp(-1, 32),
+            candidate_row_gap: config.general.candidate_row_gap.clamp(0, 24),
+            candidate_shadow: config.general.candidate_shadow,
+            annotation_table: config.general.annotation_table,
+            annotation_gap: config.general.annotation_gap.clamp(0, 64),
+            annotation_pos_after: config.general.annotation_pos_after,
             themes_stamp: 0,
             preedit: config.general.preedit,
             page_keys: config.general.page_keys(),

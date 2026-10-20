@@ -6,21 +6,30 @@
 //!   放本机目录有两个原因：日志本来就是这台机器的东西，不该跟账户漫游；DLL 被加载进
 //!   AppContainer 应用（任务栏搜索 / 设置）时写不了漫游目录，Server 启动时会给这个目录授权。
 //!
-//! 只查环境变量、不碰系统 API，其他平台也能编（拿不到为 `None`）。macOS 有自己的 `paths.rs`，不走这里。
+//! Windows 便携包的主程序同目录有 `qingjian-portable.txt` 时，数据改放 `userdata`；
+//! TSF DLL 的宿主不参与便携检测，运行日志仍保留在原来的本机日志目录。
+//! macOS 有自己的 `paths.rs`，不走这里。
+
+#[cfg(windows)]
+mod portable;
 
 use std::path::PathBuf;
 
-/// 用户数据目录 `%APPDATA%\Qingjian`。
+/// 安装版为 `%APPDATA%\Qingjian`，Windows 便携主程序为同级 `userdata`。
 pub fn user_dir() -> Option<PathBuf> {
+    #[cfg(windows)]
+    if let Some(dir) = portable::user_dir() {
+        return Some(dir);
+    }
     std::env::var_os("APPDATA").map(|base| PathBuf::from(base).join("Qingjian"))
 }
 
-/// 配置文件 `%APPDATA%\Qingjian\config.toml`。
+/// 用户数据目录中的 `config.toml`。
 pub fn config_path() -> Option<PathBuf> {
     user_dir().map(|dir| dir.join("config.toml"))
 }
 
-/// 用户主题目录 `%APPDATA%\Qingjian\themes`，一个主题一个子目录（`<id>\theme.json`），不负责创建。
+/// 用户数据目录中的 `themes`，一个主题一个子目录（`<id>\theme.json`），不负责创建。
 pub fn themes_dir() -> Option<PathBuf> {
     user_dir().map(|dir| dir.join("themes"))
 }

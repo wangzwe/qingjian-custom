@@ -18,6 +18,16 @@ impl Settings {
         let predict = &self.config.predict;
         let value = match id {
             FieldId::BaseUrl => predict.base_url.clone(),
+            FieldId::CandidateColor => self.config.general.candidate_color.clone(),
+            FieldId::CandidateBackground => self.config.general.candidate_background.clone(),
+            FieldId::CandidateHighlightColor => {
+                self.config.general.candidate_highlight_color.clone()
+            }
+            FieldId::AnnotationColor => self.config.general.annotation_color.clone(),
+            FieldId::AnnotationHighlightColor => {
+                self.config.general.annotation_highlight_color.clone()
+            }
+
             FieldId::Model => predict.model.clone(),
             FieldId::ApiKey => String::new(),
             FieldId::VocabularySearch => String::new(),
@@ -36,6 +46,36 @@ impl Settings {
             return;
         };
         match id {
+            FieldId::CandidateColor
+            | FieldId::CandidateBackground
+            | FieldId::CandidateHighlightColor
+            | FieldId::AnnotationColor
+            | FieldId::AnnotationHighlightColor => {
+                let valid_color = text.is_empty()
+                    || (text.len() == 7
+                        && text.starts_with('#')
+                        && text[1..].bytes().all(|b| b.is_ascii_hexdigit()));
+                if !valid_color {
+                    self.notice = Some((
+                        "appearance",
+                        "颜色没有保存：请填写 #RRGGBB，留空恢复主题颜色".to_owned(),
+                    ));
+                    return;
+                }
+                let current = match id {
+                    FieldId::CandidateColor => &self.config.general.candidate_color,
+                    FieldId::CandidateBackground => &self.config.general.candidate_background,
+                    FieldId::CandidateHighlightColor => {
+                        &self.config.general.candidate_highlight_color
+                    }
+                    FieldId::AnnotationColor => &self.config.general.annotation_color,
+                    _ => &self.config.general.annotation_highlight_color,
+                };
+                if text != *current {
+                    self.write("general", id.key(), text);
+                }
+                self.notice = None;
+            }
             FieldId::BaseUrl | FieldId::Model => {
                 let current = match id {
                     FieldId::BaseUrl => &self.config.predict.base_url,

@@ -13,6 +13,8 @@ use crate::view::parts::controls::LANGUAGES;
 pub fn anchor(popup: Popup) -> &'static str {
     match popup {
         Popup::Font => "font",
+        Popup::CandidateFont => "candidate_font",
+        Popup::AnnotationFont => "annotation_font",
         Popup::Scheme => "scheme",
         Popup::LearningLanguage => "learning-language",
         Popup::Traditional => "traditional",
@@ -38,16 +40,28 @@ pub fn menu(
     };
     let (key, labels, values, selected): (&str, Vec<String>, Vec<toml_edit::Value>, Option<usize>) =
         match popup {
-            Popup::Font => {
+            Popup::Font | Popup::CandidateFont | Popup::AnnotationFont => {
                 let families = page.settings.fonts.as_deref().unwrap_or_default();
-                let labels = std::iter::once("系统字体".to_owned())
-                    .chain(families.iter().cloned())
-                    .collect();
+                let labels = std::iter::once(
+                    if popup == Popup::Font {
+                        "系统字体"
+                    } else {
+                        "跟随主题"
+                    }
+                    .to_owned(),
+                )
+                .chain(families.iter().cloned())
+                .collect();
                 let values: Vec<String> = std::iter::once(String::new())
                     .chain(families.iter().cloned())
                     .collect();
-                let selected = values.iter().position(|value| *value == general.font);
-                ("font", labels, strings(values), selected)
+                let (key, current) = match popup {
+                    Popup::CandidateFont => ("candidate_font", &general.candidate_font),
+                    Popup::AnnotationFont => ("annotation_font", &general.annotation_font),
+                    _ => ("font", &general.font),
+                };
+                let selected = values.iter().position(|value| value == current);
+                (key, labels, strings(values), selected)
             }
             Popup::Scheme => {
                 let current = general.scheme();

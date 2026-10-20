@@ -77,7 +77,28 @@ impl Painter {
                             candidate: candidate.get(),
                             annotation: annotation.get(),
                         })
-                        .with_animations(settings.animations);
+                        .with_animations(settings.animations)
+                        .with_candidate_box(
+                            &settings.candidate_background,
+                            settings.candidate_padding,
+                            settings.candidate_row_padding,
+                            settings.candidate_row_gap,
+                            settings.candidate_shadow,
+                        )
+                        .with_annotation_layout(
+                            settings.annotation_table,
+                            settings.annotation_gap,
+                            settings.annotation_pos_after,
+                        );
+                    for (role, (family, bold, color, selected)) in ["candidate", "annotation"]
+                        .into_iter()
+                        .zip(&settings.text_styles)
+                    {
+                        painter.theme =
+                            painter
+                                .theme
+                                .with_text_style(role, family, *bold, (color, selected));
+                    }
                     painter
                         .renderer
                         .load_theme_fonts(&painter.theme, system_fonts::family_files);
@@ -99,6 +120,7 @@ impl Painter {
         layout: LayoutMode,
         dark: bool,
         dpi: u32,
+        reversed: bool,
     ) -> Option<Rendered> {
         let layout = match layout {
             LayoutMode::Vertical => Layout::Vertical,
@@ -106,9 +128,14 @@ impl Painter {
         };
         let started = std::time::Instant::now();
         self.renderer.set_reduce_motion(reduce_motion());
-        let rendered = self
-            .renderer
-            .render(frame, layout, &self.theme.with_dark(dark), scale(dpi))
+        let theme = self.theme.with_dark(dark);
+        let result = if reversed && layout == Layout::Vertical {
+            self.renderer
+                .render_vertical_reversed(frame, &theme, scale(dpi))
+        } else {
+            self.renderer.render(frame, layout, &theme, scale(dpi))
+        };
+        let rendered = result
             .inspect_err(|error| tracing::warn!(%error, "候选窗渲染失败"))
             .ok()?;
         tracing::debug!(

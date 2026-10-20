@@ -38,6 +38,8 @@ pub(crate) struct RenderData {
     /// 候选排布。
     pub(super) layout: LayoutMode,
 
+    pub(super) reversed: bool,
+
     /// 矩阵每行几格（`> 0` 是横排展开成矩阵）；单行为 0。
     pub(super) columns: usize,
 
@@ -69,6 +71,7 @@ impl RenderData {
             sentence: None,
             notice: None,
             layout: LayoutMode::default(),
+            reversed: false,
             columns: 0,
             column_ems: Vec::new(),
             appearance: Appearance::default(),

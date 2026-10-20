@@ -23,7 +23,12 @@ impl Settings {
 
     pub(super) fn reload(&mut self) {
         match Config::load(&self.path) {
-            Ok(config) => self.config = config,
+            Ok(config) => {
+                if self.config.general != config.general {
+                    self.previews.borrow_mut().clear();
+                }
+                self.config = config;
+            }
             Err(error) => tracing::error!(%error, "重读配置失败"),
         }
     }

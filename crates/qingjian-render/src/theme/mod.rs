@@ -5,7 +5,9 @@
 //! 主题可以 `"extends": "<内置主题 id>"`，只写要改的部分（见 `extends.rs`）。
 //! 渲染时引用不到的颜色、样式退回缺省值，加载时 [`validate`] 先把这类问题记成警告。
 
+mod annotation_layout;
 mod assets;
+mod candidate_box;
 mod error;
 mod extends;
 pub(crate) mod file;
@@ -13,6 +15,9 @@ mod font;
 mod jsonc;
 mod library;
 mod text_sizes;
+mod text_style;
+#[cfg(test)]
+mod text_style_tests;
 mod validate;
 
 use std::path::{Path, PathBuf};
@@ -314,6 +319,12 @@ pub struct Theme {
     /// 设置里的字号，盖过主题的。
     sizes: TextSizes,
 
+    pub(crate) candidate_layout: Option<(i32, i32)>,
+
+    pub(crate) annotation_pos_after: bool,
+
+    text_colors: std::collections::HashMap<String, (Option<Color>, Option<Color>)>,
+
     /// 设置里关了过渡动画时为 `false`：过渡直接跳到终点，循环动画停在第一帧。
     animations: bool,
 }
@@ -361,6 +372,9 @@ impl Theme {
         let theme = Self {
             families: Arc::new(FontFamilies::new(&file.text)),
             sizes: TextSizes::default(),
+            text_colors: Default::default(),
+            candidate_layout: None,
+            annotation_pos_after: false,
             animations: true,
             file: Arc::new(file),
             dark,
@@ -386,6 +400,9 @@ impl Theme {
             assets: Arc::clone(&self.assets),
             families: Arc::clone(&self.families),
             sizes: self.sizes,
+            text_colors: self.text_colors.clone(),
+            candidate_layout: self.candidate_layout,
+            annotation_pos_after: self.annotation_pos_after,
             animations: self.animations,
         }
     }

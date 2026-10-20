@@ -26,5 +26,5 @@ pub(super) enum UiCommand {
     StatusHide,
 
     /// 换画法（渲染器 / 字体）。
-    Configure(RenderSettings),
+    Configure(Box<RenderSettings>),
 }

@@ -1,5 +1,8 @@
 //! 「外观」页：预览卡，外观（外观、主题），排布（排布、拼音显示位置），文字（渲染引擎、字体、两个字号），动效。
 
+mod annotation_layout;
+mod candidate_box;
+mod text_style;
 mod themes;
 
 use bamboo_slip::taffy::NodeId;
@@ -111,6 +114,10 @@ pub fn appearance(ui: &mut Ui<Message>, page: &Page) -> Result<Vec<NodeId>, Rend
         .build(ui, theme)?;
     out.push(section_title(ui, theme, "文字")?);
     out.push(group(ui, theme, &[renderer, font, candidate, annotation])?);
+
+    if Feature::IndependentTextStyle.here() {
+        out.extend(text_style::controls(ui, page, own)?);
+    }
 
     let animations = toggle(
         ui,

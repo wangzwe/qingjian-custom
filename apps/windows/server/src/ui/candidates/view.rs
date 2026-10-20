@@ -115,8 +115,20 @@ pub(super) fn paint(hdc: HDC, data: &RenderData, client: RECT) {
     unsafe { SetBkMode(hdc, TRANSPARENT) };
 
     let mut y = theme.padding;
-    y += draw_top_line(hdc, data, y);
-    y += draw_notice(hdc, data, y);
+    if data.reversed && data.layout == LayoutMode::Vertical {
+        let height = client.bottom - client.top;
+        let top_height = top_line_size(hdc, data).1;
+        let notice_height = notice_line_size(hdc, data).1;
+        draw_top_line(hdc, data, height - theme.padding - top_height);
+        draw_notice(
+            hdc,
+            data,
+            height - theme.padding - top_height - notice_height,
+        );
+    } else {
+        y += draw_top_line(hdc, data, y);
+        y += draw_notice(hdc, data, y);
+    }
     match data.layout {
         LayoutMode::Vertical => draw_rows(hdc, data, y, client.right - client.left),
         LayoutMode::Horizontal if data.columns > 0 => {
@@ -234,7 +246,14 @@ fn draw_rows(hdc: HDC, data: &RenderData, mut y: i32, width: i32) {
     let columns = columns(hdc, theme, &data.rows);
     let text_x = theme.padding + columns.index_width + theme.column_gap;
     let annotation_x = text_x + columns.text_width + theme.column_gap;
+    let footer_height = data.footer.as_ref().map_or(0, |footer| {
+        measure(hdc, theme.index_font, footer).cy + theme.row_padding
+    });
+    let start = y;
     for (i, row) in data.rows.iter().enumerate() {
+        if data.reversed {
+            y = start + footer_height + (data.rows.len() - 1 - i) as i32 * columns.row_height;
+        }
         if i == data.highlight {
             let rect = RECT {
                 left: theme.padding / 2,
@@ -271,6 +290,9 @@ fn draw_rows(hdc: HDC, data: &RenderData, mut y: i32, width: i32) {
     }
     if let Some(footer) = &data.footer {
         let size = measure(hdc, theme.index_font, footer);
+        if data.reversed {
+            y = start;
+        }
         draw_text(
             hdc,
             theme.index_font,

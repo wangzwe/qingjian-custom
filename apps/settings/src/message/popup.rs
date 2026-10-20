@@ -3,6 +3,8 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Popup {
     Font,
+    CandidateFont,
+    AnnotationFont,
     Scheme,
     LearningLanguage,
     /// 输出字形：简体与三档繁体。

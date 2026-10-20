@@ -16,6 +16,10 @@ pub struct Previews {
 }
 
 impl Previews {
+    pub fn clear(&mut self) {
+        self.cache.clear();
+    }
+
     pub fn new() -> Self {
         let renderer = match FontLibrary::system("zh-CN") {
             Ok(library) => Some(Renderer::new(library)),
@@ -52,7 +56,7 @@ impl Previews {
             return Some(Arc::clone(pixmap));
         }
         let renderer = self.renderer.as_mut()?;
-        renderer.load_theme_fonts(theme, |_| Vec::new());
+        renderer.load_theme_fonts(theme, qingjian_render::system_fonts::family_files);
         // 每张预览都从头画，不与上一张配对过渡
         renderer.forget();
         let layout = if horizontal {

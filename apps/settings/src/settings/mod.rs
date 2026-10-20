@@ -184,12 +184,45 @@ impl Settings {
     /// 当前主题，按外观与设置里的字号换好。
     pub fn theme(&self, id: &str) -> Theme {
         let general = &self.config.general;
-        self.themes
+        let theme = self
+            .themes
             .resolve(id, self.candidate_dark())
             .with_text_sizes(TextSizes::new(
                 general.candidate_font_size.0,
                 general.annotation_font_size.0,
             ))
+            .with_text_style(
+                "candidate",
+                &general.candidate_font,
+                general.candidate_bold,
+                (&general.candidate_color, &general.candidate_highlight_color),
+            )
+            .with_text_style(
+                "annotation",
+                &general.annotation_font,
+                general.annotation_bold,
+                (
+                    &general.annotation_color,
+                    &general.annotation_highlight_color,
+                ),
+            );
+        if crate::support::Feature::IndependentTextStyle.here() {
+            theme
+                .with_candidate_box(
+                    &general.candidate_background,
+                    general.candidate_padding,
+                    general.candidate_row_padding,
+                    general.candidate_row_gap,
+                    general.candidate_shadow,
+                )
+                .with_annotation_layout(
+                    general.annotation_table,
+                    general.annotation_gap,
+                    general.annotation_pos_after,
+                )
+        } else {
+            theme
+        }
     }
 
     /// 字号框里显示的数：设置里写了用它，没写用主题的。

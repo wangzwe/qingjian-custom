@@ -52,6 +52,32 @@ pub struct GeneralConfig {
     /// 候选窗口竖排 / 横排。
     pub layout: LayoutMode,
 
+    /// Windows 候选框内容边缘距输入行的逻辑像素；-1 自动避让阴影，0–40 自定义。
+    pub candidate_gap: i32,
+
+    /// 候选框背景色；空值跟随主题。
+    pub candidate_background: String,
+
+    /// 整框内边距、每条候选内边距；-1 跟随主题，0–32 逻辑像素。
+    pub candidate_padding: i32,
+
+    pub candidate_row_padding: i32,
+
+    /// 候选行间距，0–24 逻辑像素。
+    pub candidate_row_gap: i32,
+
+    /// 候选框边缘阴影，默认关闭。
+    pub candidate_shadow: bool,
+
+    /// 竖排译文按表格共享列宽；关闭后每行独立排布。
+    pub annotation_table: bool,
+
+    /// 固定排布时，候选与译文间的逻辑像素距离，0–64。
+    pub annotation_gap: i32,
+
+    /// 词性放在每条译文后面。
+    pub annotation_pos_after: bool,
+
     /// 横排时上 / 下键把单行展开成多行矩阵（左 / 右键改为移动候选高亮，Esc 第一下先收回）。缺省关：横排下的按键与以前一样。
     pub horizontal_grid: bool,
 
@@ -60,6 +86,23 @@ pub struct GeneralConfig {
 
     /// 候选窗口字体的字族名；空为系统字体。只对青简渲染器生效，没装这个字体时回到系统字体。
     pub font: String,
+
+    /// 候选与译文独立文字设置；空值 / false 沿用主题，Windows 青简渲染器使用。
+    pub candidate_font: String,
+
+    pub candidate_bold: bool,
+
+    pub candidate_color: String,
+
+    pub candidate_highlight_color: String,
+
+    pub annotation_font: String,
+
+    pub annotation_bold: bool,
+
+    pub annotation_color: String,
+
+    pub annotation_highlight_color: String,
 
     /// 候选字字号（点），盖过主题的；0 用主题的。不限范围，不是正数的当 0。只对青简渲染器生效。
     pub candidate_font_size: FontSize,
@@ -185,9 +228,26 @@ impl Default for GeneralConfig {
             appearance: Some(Appearance::default()),
             theme: DEFAULT_THEME.to_owned(),
             layout: LayoutMode::default(),
+            candidate_gap: -1,
+            candidate_background: String::new(),
+            candidate_padding: -1,
+            candidate_row_padding: -1,
+            candidate_row_gap: 0,
+            candidate_shadow: false,
+            annotation_table: true,
+            annotation_gap: 8,
+            annotation_pos_after: true,
             horizontal_grid: false,
             renderer: CandidateRenderer::default(),
             font: String::new(),
+            candidate_font: String::new(),
+            candidate_bold: false,
+            candidate_color: String::new(),
+            candidate_highlight_color: String::new(),
+            annotation_font: String::new(),
+            annotation_bold: false,
+            annotation_color: String::new(),
+            annotation_highlight_color: String::new(),
             candidate_font_size: FontSize::default(),
             annotation_font_size: FontSize::default(),
             animations: true,

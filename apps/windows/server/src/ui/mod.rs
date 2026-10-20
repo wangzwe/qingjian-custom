@@ -17,6 +17,10 @@ mod window_class;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
 use std::thread;
 
 use windows::Win32::Foundation::{E_FAIL, HINSTANCE, LPARAM, RECT, WPARAM};
@@ -59,6 +63,8 @@ pub struct UiHandle {
 
     /// UI 线程 id，`PostThreadMessageW` 用。
     thread_id: u32,
+
+    reversed: Arc<AtomicBool>,
 }
 
 impl UiHandle {
@@ -71,14 +77,26 @@ impl UiHandle {
         // 用 Option<u32> 而非 Result 回报，免得 windows Error 跨线程。
         let (ready_tx, ready_rx) = mpsc::channel::<Option<u32>>();
         let (command_tx, command_rx) = mpsc::channel::<UiCommand>();
+        let reversed = Arc::new(AtomicBool::new(false));
+        let shown_direction = Arc::clone(&reversed);
         thread::Builder::new()
             .name("qingjian-candidates".to_owned())
-            .spawn(move || run(command_rx, &ready_tx, on_status, on_click, on_panel))
+            .spawn(move || {
+                run(
+                    command_rx,
+                    &ready_tx,
+                    on_status,
+                    on_click,
+                    on_panel,
+                    shown_direction,
+                )
+            })
             .map_err(|_| Error::from(E_FAIL))?;
         match ready_rx.recv() {
             Ok(Some(thread_id)) => Ok(Self {
                 sender: command_tx,
                 thread_id,
+                reversed,
             }),
             _ => Err(Error::from(E_FAIL)),
         }
@@ -93,6 +111,10 @@ impl UiHandle {
 }
 
 impl CandidateSink for UiHandle {
+    fn vertical_reversed(&self) -> bool {
+        self.reversed.load(Ordering::Acquire)
+    }
+
     fn show(&self, frame: Frame, mode: Mode, rect: ScreenRect) {
         self.post(UiCommand::Show(Box::new((frame, mode, rect))));
     }
@@ -110,7 +132,7 @@ impl CandidateSink for UiHandle {
     }
 
     fn configure(&self, settings: RenderSettings) {
-        self.post(UiCommand::Configure(settings));
+        self.post(UiCommand::Configure(Box::new(settings)));
     }
 }
 
@@ -170,6 +192,7 @@ fn run(
     on_status: StatusEvents,
     on_click: CandidateClicks,
     on_panel: PanelEvents,
+    reversed: Arc<AtomicBool>,
 ) {
     // 按物理像素定位，与应用报来的组句屏幕矩形对齐；已设过会失败，忽略。
     let _ = unsafe { SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) };
@@ -216,6 +239,7 @@ fn run(
             // 一次唤醒排空整个队列，保住 Hide→Show 的先后。
             while let Ok(command) = commands.try_recv() {
                 apply(&window, panel.as_ref(), status.as_ref(), &painter, command);
+                reversed.store(window.is_reversed(), Ordering::Release);
             }
             continue;
         }
@@ -261,7 +285,10 @@ fn apply(
                 status.hide();
             }
         }
-        UiCommand::Configure(settings) => Painter::configure(painter, &settings),
+        UiCommand::Configure(settings) => {
+            window.configure_gap(settings.candidate_gap, settings.candidate_shadow);
+            Painter::configure(painter, &settings);
+        }
     }
 }
 

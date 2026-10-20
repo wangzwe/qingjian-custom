@@ -24,6 +24,17 @@ enum EdgesRepr {
     Each([Length; 4]),
 }
 
+impl Edges {
+    pub(crate) fn all(value: f32) -> Self {
+        Self {
+            top: Length::Points(value),
+            right: Length::Points(value),
+            bottom: Length::Points(value),
+            left: Length::Points(value),
+        }
+    }
+}
+
 impl From<EdgesRepr> for Edges {
     fn from(value: EdgesRepr) -> Self {
         let [top, right, bottom, left] = match value {

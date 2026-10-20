@@ -54,6 +54,10 @@ impl Builder<'_> {
                 template.push(GridTemplateComponent::from_fr(1.0));
                 let style = Style {
                     display: Display::Grid,
+                    gap: bamboo_slip::taffy::Size {
+                        width: bamboo_slip::taffy::LengthPercentage::length(0.0),
+                        height: base.gap.height,
+                    },
                     grid_template_columns: template,
                     // 行高至少是主题写的（随设置里的候选字号缩放），内容更高时撑开，不会压到下一行
                     grid_auto_rows: vec![minmax(
@@ -64,7 +68,11 @@ impl Builder<'_> {
                     )],
                     justify_content: Some(JustifyContent::START),
                     align_content: Some(AlignContent::START),
-                    align_items: Some(AlignItems::START),
+                    align_items: Some(if self.theme.candidate_layout.is_some() {
+                        AlignItems::CENTER
+                    } else {
+                        AlignItems::START
+                    }),
                     justify_items: Some(AlignItems::START),
                     ..base
                 };
@@ -78,8 +86,19 @@ impl Builder<'_> {
                         None => self.node(child, ctx, &BoxSpec::default(), &mut nodes)?,
                     }
                 }
-                self.scene
-                    .node(layout_style::flex(base, *direction), visual, &nodes)?
+                let mut style = layout_style::flex(base, *direction);
+                if ctx.row.is_some()
+                    && self.theme.candidate_layout.is_some()
+                    && *direction == crate::theme::file::node::Direction::Row
+                {
+                    style.align_items = Some(AlignItems::CENTER);
+                }
+                // 只翻转根容器（页码、候选、拼音），候选内部的多行译文保持正常阅读顺序。
+                if self.reverse_vertical && std::ptr::eq(spec, &self.theme.file().windows.vertical)
+                {
+                    style.flex_direction = bamboo_slip::taffy::FlexDirection::ColumnReverse;
+                }
+                self.scene.node(style, visual, &nodes)?
             }
         };
         self.apply_layer(node, layout, ctx);
@@ -160,14 +179,38 @@ impl Builder<'_> {
             for (i, row) in rows.iter().enumerate() {
                 let row_ctx = ctx.with_row(row, i, rows.len());
                 let grid_row = Line {
-                    start: GridPlacement::from_line_index(i as i16 + 1),
+                    start: GridPlacement::from_line_index(if self.reverse_vertical {
+                        (rows.len() - i) as i16
+                    } else {
+                        i as i16 + 1
+                    }),
                     end: GridPlacement::AUTO,
                 };
                 let mut column = 0;
                 let mut aligned = Vec::with_capacity(row_cells.len());
                 for cell in row_cells {
                     let mut built = Vec::with_capacity(1);
-                    self.node(cell, row_ctx, &BoxSpec::default(), &mut built)?;
+                    let mut over = BoxSpec::default();
+                    if let Some((padding, _)) = self.theme.candidate_layout {
+                        use crate::theme::file::node::{Align, Edges, Length};
+                        let p = if padding < 0 { 4.0 } else { padding as f32 };
+                        let mut margin = cell.layout.margin.unwrap_or(Edges::all(0.0));
+                        if cell.layout.span == Some(Span::Row) {
+                            margin = Edges::all(0.0);
+                        } else {
+                            margin.top = Length::Points(p);
+                            margin.bottom = Length::Points(p);
+                            if column == 0 {
+                                margin.left = Length::Points(p);
+                            }
+                            if std::ptr::eq(cell, row_cells.last().unwrap()) {
+                                margin.right = Length::Points(p);
+                            }
+                            over.align_self = Some(Align::Center);
+                        }
+                        over.margin = Some(margin);
+                    }
+                    self.node(cell, row_ctx, &over, &mut built)?;
                     let span = cell.layout.span == Some(Span::Row);
                     for node in built {
                         let grid_column = if span {
@@ -191,7 +234,9 @@ impl Builder<'_> {
                         cells.push(node);
                     }
                 }
-                self.scene.add_table_row(aligned);
+                if self.theme.candidate_layout.is_none() {
+                    self.scene.add_table_row(aligned);
+                }
                 columns = columns.max(column);
             }
         }

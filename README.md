@@ -1,3 +1,22 @@
+# 青简 Windows 非官方定制版
+
+本仓库由 **wangzwe** 基于 [qingjian-team/qingjian](https://github.com/qingjian-team/qingjian) 修改，
+整体按 **GPL-3.0-or-later** 开源；非官方发行，修改日期 2026-10-20。
+
+**[下载便携版与对应源码](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable1)** ·
+[使用说明](docs/custom/portable.md) · [完整修改清单](docs/custom/requirements.md) ·
+[构建步骤](docs/custom/build.md) · [许可及来源声明](CUSTOM-NOTICE.md)
+
+- 候选词与译文分别设置字体、加粗、颜色。
+- 竖排第一项靠近光标，方向键跟随屏幕方向；窗口距离、背景、阴影、边距可调。
+- 译文支持表格对齐或固定间距，词性可置于译词后。
+- 便携版数据保存在 userdata；首次启用仍需管理员注册，不能与安装版同时注册。
+
+本定制版基于上游 `c97ff2b`，没有合入此后上游更新。便携版尚未完成注册后的真实输入测试。
+下方保留上游项目介绍，其中官方网站下载链接指向官方版。
+
+---
+
 <p align="center">
   <img src="assets/icon/qingjian-mark.svg" alt="青简竹简图标" height="108">
 </p>

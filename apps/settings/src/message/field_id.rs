@@ -4,6 +4,12 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FieldId {
     BaseUrl,
+    CandidateColor,
+    CandidateBackground,
+    CandidateHighlightColor,
+    AnnotationColor,
+    AnnotationHighlightColor,
+
     Model,
     ApiKey,
     PhraseCode,
@@ -14,12 +20,27 @@ pub enum FieldId {
 
 impl FieldId {
     /// 存进配置的那几个（短语的两个随卡片一起存）。
-    pub const ALL: [Self; 3] = [Self::BaseUrl, Self::Model, Self::ApiKey];
+    pub const ALL: [Self; 8] = [
+        Self::BaseUrl,
+        Self::Model,
+        Self::ApiKey,
+        Self::CandidateColor,
+        Self::CandidateBackground,
+        Self::CandidateHighlightColor,
+        Self::AnnotationColor,
+        Self::AnnotationHighlightColor,
+    ];
 
     /// 配置文件 `[predict]` 里的键。
     pub fn key(self) -> &'static str {
         match self {
             Self::BaseUrl => "base_url",
+            Self::CandidateColor => "candidate_color",
+            Self::CandidateBackground => "candidate_background",
+            Self::CandidateHighlightColor => "candidate_highlight_color",
+            Self::AnnotationColor => "annotation_color",
+            Self::AnnotationHighlightColor => "annotation_highlight_color",
+
             Self::Model => "model",
             Self::ApiKey => "api_key",
             Self::PhraseCode => "code",

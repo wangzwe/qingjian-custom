@@ -153,6 +153,7 @@ fn fill_shadow_and_background(
     let bg_r = (bg & 0xFF) as u8;
     let bg_g = ((bg >> 8) & 0xFF) as u8;
     let bg_b = ((bg >> 16) & 0xFF) as u8;
+    let shadow = margin > 0;
     let margin = (margin as f64).max(1.0);
     for y in 0..h {
         for x in 0..w {
@@ -171,7 +172,11 @@ fn fill_shadow_and_background(
                 pixels[idx] = 0;
                 pixels[idx + 1] = 0;
                 pixels[idx + 2] = 0;
-                pixels[idx + 3] = (ambient + key).min(255.0) as u8;
+                pixels[idx + 3] = if shadow {
+                    (ambient + key).min(255.0) as u8
+                } else {
+                    0
+                };
             }
         }
     }

@@ -2,6 +2,7 @@
 //!
 //! 一个模板节点可能产出零个（条件不成立、绑定为空）或多个（`repeat`）场景节点，所以都往 `out` 里推。
 
+mod annotation_order;
 mod cell;
 mod context;
 mod frame;
@@ -25,6 +26,9 @@ use bamboo_slip::{TextPainter, TextStyle};
 use context::Context;
 
 pub(super) struct Builder<'a> {
+    /// 上方竖排的显示方向；不改变帧里的候选顺序。
+    pub(super) reverse_vertical: bool,
+
     pub(super) scene: &'a mut Scene,
 
     pub(super) theme: &'a Theme,
@@ -90,7 +94,19 @@ impl Builder<'_> {
         if spec.when.as_deref().is_some_and(|when| !ctx.holds(when)) {
             return Ok(());
         }
-        let layout = spec.layout.overridden_by(over);
+        let mut layout = spec.layout.clone();
+        if ctx.row.is_some()
+            && self.theme.candidate_layout.is_some()
+            && layout.position != Some(crate::theme::file::node::Position::Absolute)
+            && layout.span != Some(crate::theme::file::node::Span::Row)
+        {
+            if let Some(margin) = layout.margin.as_mut() {
+                margin.top = crate::theme::file::node::Length::Points(0.0);
+                margin.bottom = crate::theme::file::node::Length::Points(0.0);
+            }
+            layout.align_self = None;
+        }
+        let layout = layout.overridden_by(over);
         let theme = self.theme;
         match &spec.kind {
             NodeKind::Frame { .. } => {
@@ -121,7 +137,13 @@ impl Builder<'_> {
                 else {
                     return Ok(());
                 };
-                for (i, row) in rows.iter().enumerate() {
+                for visual in 0..rows.len() {
+                    let i = if self.reverse_vertical {
+                        rows.len() - 1 - visual
+                    } else {
+                        visual
+                    };
+                    let row = &rows[i];
                     let row_ctx = ctx.with_row(row, i, rows.len());
                     let before = out.len();
                     self.node(component, row_ctx, &layout, out)?;

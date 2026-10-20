@@ -33,10 +33,17 @@ impl Builder<'_> {
                 let Some(content) = content else {
                     return Ok(None);
                 };
+                let color = self.color(color, ctx);
+                let color = if bind.as_deref() == Some("text") && ctx.row.is_some() {
+                    self.theme
+                        .text_color("candidate", ctx.holds("highlighted"), color)
+                } else {
+                    color
+                };
                 let visual = Visual::Text {
                     text: content.to_owned(),
                     style: self
-                        .text_style(font, self.color(color, ctx))
+                        .text_style(font, color)
                         .stroked(self.stroke(stroke.as_ref(), ctx)),
                 };
                 self.scene.node(style, visual, &[])?
@@ -80,6 +87,8 @@ impl Builder<'_> {
                 };
                 // 挑完是空的也留着节点（与没有译文时一样）：主题写了高度就照样占住这一行，几列对得齐
                 let segments = pick_segments(segments, tones.as_deref(), *senses);
+                let segments =
+                    super::annotation_order::arrange(segments, self.theme.annotation_pos_after);
                 let stroke = self.stroke(stroke.as_ref(), ctx);
                 // 点译文上屏的是哪个候选的译词：候选那一列的是它自己，横排底下那行是高亮的那个
                 let candidate = match bind.as_str() {
@@ -97,11 +106,14 @@ impl Builder<'_> {
                         Tone::Pos => pos.as_ref().unwrap_or(faint),
                         Tone::Separator => separator.as_ref().unwrap_or(faint),
                     };
+                    let color = self.theme.text_color(
+                        "annotation",
+                        bind == "annotation" && ctx.holds("highlighted"),
+                        self.color(color, ctx),
+                    );
                     let visual = Visual::Text {
                         text: segment.clone(),
-                        style: self
-                            .text_style(font, self.color(color, ctx))
-                            .stroked(stroke),
+                        style: self.text_style(font, color).stroked(stroke),
                     };
                     let child = self.scene.node(Style::default(), visual, &[])?;
                     if let Some(candidate) = candidate

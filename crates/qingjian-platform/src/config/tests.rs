@@ -3,6 +3,37 @@
 use super::*;
 
 #[test]
+fn independent_appearance_settings_round_trip_and_preserve_legacy_defaults() {
+    let config: Config = toml::from_str(
+        r##"
+[general]
+candidate_font = "Microsoft YaHei"
+annotation_font = "Arial"
+candidate_bold = true
+annotation_bold = false
+candidate_color = "#123456"
+annotation_color = "#abcdef"
+candidate_highlight_color = "#ffffff"
+annotation_highlight_color = "#eeeeee"
+candidate_gap = 0
+"##,
+    )
+    .unwrap();
+    assert_eq!(config.general.candidate_font, "Microsoft YaHei");
+    assert_eq!(config.general.annotation_font, "Arial");
+    assert!(config.general.candidate_bold);
+    assert_eq!(config.general.candidate_gap, 0);
+    let saved = toml::to_string(&config).unwrap();
+    assert_eq!(toml::from_str::<Config>(&saved).unwrap(), config);
+    let old: Config = toml::from_str("[general]\nfont = 'SimSun'\n").unwrap();
+    assert_eq!(old.general.font, "SimSun");
+    assert!(old.general.candidate_font.is_empty());
+    assert!(old.general.annotation_font.is_empty());
+    assert!(!old.general.candidate_bold);
+    assert_eq!(old.general.candidate_gap, -1);
+}
+
+#[test]
 fn template_parses_to_defaults() {
     let config: Config = toml::from_str(TEMPLATE).unwrap();
     assert_eq!(config, Config::default());
@@ -232,6 +263,25 @@ fn missing_file_is_default() {
     let path = std::env::temp_dir().join("qingjian-config-missing-test.toml");
     let _ = std::fs::remove_file(&path);
     assert_eq!(Config::load(&path).unwrap(), Config::default());
+}
+
+#[test]
+fn annotation_layout_defaults_and_round_trip() {
+    let default: Config = toml::from_str("[general]\n").unwrap();
+    assert!(default.general.annotation_table);
+    assert_eq!(default.general.annotation_gap, 8);
+    assert!(default.general.annotation_pos_after);
+    let config: Config = toml::from_str(
+        "[general]\nannotation_table = false\nannotation_gap = 12\nannotation_pos_after = false\n",
+    )
+    .unwrap();
+    assert!(!config.general.annotation_table);
+    assert_eq!(config.general.annotation_gap, 12);
+    assert!(!config.general.annotation_pos_after);
+    assert_eq!(
+        toml::from_str::<Config>(&toml::to_string(&config).unwrap()).unwrap(),
+        config
+    );
 }
 
 #[test]

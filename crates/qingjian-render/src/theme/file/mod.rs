@@ -1,7 +1,7 @@
 //! 主题文件 `theme.json` 的结构，见 `docs/design/theme.md`。只管反序列化，解析引用、实例化在别处。
 
 mod adaptive;
-mod color;
+pub(super) mod color;
 mod font;
 mod meta;
 pub(crate) mod node;

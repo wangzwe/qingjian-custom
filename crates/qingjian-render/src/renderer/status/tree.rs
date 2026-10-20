@@ -29,6 +29,7 @@ impl Renderer {
             theme,
             scale,
             text: self.stage.text(),
+            reverse_vertical: false,
             cell_nodes: Vec::new(),
             candidate_nodes: Vec::new(),
             sense_nodes: Vec::new(),

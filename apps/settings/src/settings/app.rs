@@ -177,7 +177,11 @@ impl App for Settings {
             }
             Message::SetList(section, key, values) => self.write_list(section, key, &values),
             Message::OpenMenu(popup) => {
-                if popup == Popup::Font && self.fonts.is_none() {
+                if matches!(
+                    popup,
+                    Popup::Font | Popup::CandidateFont | Popup::AnnotationFont
+                ) && self.fonts.is_none()
+                {
                     self.fonts = Some(fonts::families());
                 }
                 self.menu = Some(popup);
@@ -190,6 +194,26 @@ impl App for Settings {
                     SizeKind::Annotation => "annotation_font_size",
                 };
                 self.write("general", key, f64::from(value));
+            }
+            Message::ResetTextStyles => {
+                for key in [
+                    "candidate_font",
+                    "annotation_font",
+                    "candidate_color",
+                    "annotation_color",
+                    "candidate_highlight_color",
+                    "annotation_highlight_color",
+                ] {
+                    self.write("general", key, "");
+                }
+                for key in ["candidate_bold", "annotation_bold"] {
+                    self.write("general", key, false);
+                }
+                self.write("general", "candidate_font_size", 0.0);
+                self.write("general", "annotation_font_size", 0.0);
+                for id in FieldId::ALL {
+                    self.reset_field(id);
+                }
             }
             Message::ResetSizes => {
                 self.write("general", "candidate_font_size", 0.0);
