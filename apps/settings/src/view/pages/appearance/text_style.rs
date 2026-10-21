@@ -84,7 +84,14 @@ pub(super) fn controls(
             SettingRow::new("字体")
                 .control(font)
                 .build(ui, &page.theme)?,
-            toggle_with(ui, page, "加粗", ("general", bold_key), bold, !style_enabled)?,
+            toggle_with(
+                ui,
+                page,
+                "加粗",
+                ("general", bold_key),
+                bold,
+                !style_enabled,
+            )?,
             color(ui, page, normal, "文字颜色", colors_enabled)?,
             color(ui, page, selected, "选中时颜色", colors_enabled)?,
         ];

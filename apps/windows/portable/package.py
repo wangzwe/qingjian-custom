@@ -10,7 +10,7 @@ import shutil
 import zipfile
 
 REPO = Path(__file__).resolve().parents[3]
-FOLDER = "Qingjian-custom3-portable1"
+FOLDER = "Qingjian-custom3-portable3"
 
 
 def stage(destination: Path, guide: Path) -> Path:
@@ -31,8 +31,8 @@ def stage(destination: Path, guide: Path) -> Path:
         rename = re.search(r'DestName: "([^"]+)"', options)
         for item in matches:
             name = rename.group(1) if rename else item.name
-            name = name.replace("{#TsfDll}", "qingjian_tsf-custom3-portable1.dll")
-            name = name.replace("{#TsfDll32}", "qingjian_tsf-custom3-portable1-x86.dll")
+            name = name.replace("{#TsfDll}", "qingjian_tsf-custom3-portable3.dll")
+            name = name.replace("{#TsfDll32}", "qingjian_tsf-custom3-portable3-x86.dll")
             dest = Path(target) / name
             if not dest.resolve().is_relative_to(root):
                 raise RuntimeError(f"文件目标越界：{dest}")
@@ -41,7 +41,7 @@ def stage(destination: Path, guide: Path) -> Path:
                 shutil.copytree(item, dest)
             else:
                 shutil.copy2(item, dest)
-    (root / "qingjian-portable.txt").write_text("Qingjian custom3 portable1\n", encoding="utf-8")
+    (root / "qingjian-portable.txt").write_text("Qingjian custom3 portable3\n", encoding="utf-8")
     (root / "userdata").mkdir()
     (root / "userdata/README.txt").write_text(
         "配置、学习数据和自定义主题保存在此目录。\n"

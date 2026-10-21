@@ -24,8 +24,8 @@ use windows::Win32::UI::WindowsAndMessaging::{
 };
 use windows::core::{Error, PCWSTR, Result, w};
 
-use qingjian_platform::{Appearance, FontSize};
 use qingjian_platform::protocol::Frame;
+use qingjian_platform::{Appearance, FontSize};
 use qingjian_render::Mode;
 
 pub use self::click::CandidateClicks;

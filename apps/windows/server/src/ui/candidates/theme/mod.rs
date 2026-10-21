@@ -2,12 +2,12 @@
 
 mod palette;
 
+use qingjian_platform::FontSize;
 use windows::Win32::Foundation::COLORREF;
 use windows::Win32::Graphics::Gdi::{
     CLEARTYPE_QUALITY, CLIP_DEFAULT_PRECIS, CreateFontW, DEFAULT_CHARSET, DeleteObject,
     FF_DONTCARE, HFONT, OUT_TT_PRECIS, VARIABLE_PITCH,
 };
-use qingjian_platform::FontSize;
 use windows::core::{PCWSTR, w};
 
 use self::palette::Palette;

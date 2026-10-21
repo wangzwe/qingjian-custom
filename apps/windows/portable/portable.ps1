@@ -9,8 +9,8 @@ $ErrorActionPreference = 'Stop'
 $bundleRoot = [IO.Path]::GetFullPath($PSScriptRoot)
 $serviceClsid = '{4FDCA82D-E923-49BF-9E75-BB906B93B8BB}'
 $dllNames = @{
-    Registry64 = 'qingjian_tsf-custom3-portable1.dll'
-    Registry32 = 'qingjian_tsf-custom3-portable1-x86.dll'
+    Registry64 = 'qingjian_tsf-custom3-portable3.dll'
+    Registry32 = 'qingjian_tsf-custom3-portable3-x86.dll'
 }
 
 function Test-SamePath([string]$Left, [string]$Right) {

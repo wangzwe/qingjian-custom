@@ -1,12 +1,12 @@
 # 青简候选窗口需求与修改汇总
 
-整理日期：2026-10-19；2026-10-20 补充便携包。本文记录本次定制的需求、三版修改结果及后续查阅入口，以第三版的实际行为为准。
+整理日期：2026-10-21。本文记录本次定制的需求、三版修改结果及后续查阅入口，以第三版的实际行为为准。
 
-适用范围：Windows 本地修改版，新增外观设置主要使用「青简渲染器」生效。文中的“已实现”表示已完成本地源码修改、检查和安装包构建，不代表官方已经合并，也不代表本机已经安装第三版。
+适用范围：Windows 本地修改版。候选字与译文的独立字体、加粗、字号及颜色支持青简渲染器和系统绘制；其他新增外观设置由青简渲染器提供。文中的“已实现”表示已完成本地源码修改、构建与检查，不代表官方已经合并。
 
 源码仓库：[qingjian-team/qingjian](https://github.com/qingjian-team/qingjian)。基准提交：`c97ff2b61933d6fcd845ee4f4f470faf3ea83bf6`。
 
-当前安装版为 **第三版 custom3**，包含前两版全部修改。另提供保留相同功能的 **custom3-portable1 解压便携包**，使用方式见第 9 节。
+当前解压便携版为 **custom3-portable3**，包含万象词库、数学补充词条、英语译文及最新系统绘制文字样式设置，使用方式见第 9 节。
 
 ## 1. 需求与修改清单
 
@@ -24,7 +24,7 @@
 | R10 | 中英文之间保持固定距离，不被其他行的长中文拉开 | 竖排增加「表格对齐 / 固定间距」选择；固定模式逐行计算译文位置 | 第三版 |
 | R11 | 可以调整中英文间距 | 固定间距模式下可设 0–64 px，默认 8 px | 第三版 |
 | R12 | 英文词性显示在对应译词后面，并提供设置入口 | 新增「译文前 / 译文后」选择，默认后置；多个义项分别处理 | 第三版 |
-| R13 | 提供免安装便携版本 | 解压目录运行，配置和学习数据放入 userdata；附启用、启动、设置、状态、停用脚本，首次启用仍需管理员注册输入法 | custom3-portable1 |
+| R13 | 提供免安装便携版本 | 解压目录运行，配置和学习数据放入 userdata；附启用、启动、设置、状态、停用脚本，首次启用仍需管理员注册输入法 | custom3-portable3 |
 
 这些修改调整显示与交互，不改变候选词排序权重、数字编号或译词本身的内容。
 
@@ -235,11 +235,12 @@ git apply C:\path\to\qingjian-customization-v3.patch
 
 公开交付文件见本仓库 Releases。本文中的历史包可能只在本地保留；公开发布以 Release 附件为准。
 
-## 9. 解压便携包（2026-10-20）
+## 9. 解压便携包（2026-10-21）
 
-- [便携 ZIP](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable1)。
-- [便携版使用说明与迁移步骤](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable1)。
-- [含便携支持的累计源码补丁](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable1)。
+- [便携 ZIP](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable3)。
+- [便携版使用说明与迁移步骤](docs/custom/portable.md)。
+- [万象词库、数学补充词条与英语译文说明](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable3)。
+- [含便携支持的累计源码补丁](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable3)。
 
 这份包不需要安装向导，程序不复制到 Program Files，不新增开机启动项。`qingjian-portable.txt` 使 Server 和设置程序把配置、学习记录与自定义主题放在程序同目录的 `userdata`；没有标记时仍使用安装版原来的数据目录。运行诊断日志仍留在 `%LOCALAPPDATA%\Qingjian\logs`。
 
@@ -247,4 +248,4 @@ Windows TSF 输入法仍需注册。首次运行 `Enable.cmd` 会请求管理员
 
 脚本遇到其他目录的青简注册会拒绝覆盖。本次只制作和验证包，没有改变本机现有 custom3 安装版注册，也没有打包个人数据。迁移应先备份 `%APPDATA%\Qingjian`，卸载安装版后再启用便携包，具体见使用说明。
 
-便携修改入口是 `crates/qingjian-platform/src/dirs/` 与 `apps/windows/portable/`。已验证路径识别、普通模式回退、Windows PowerShell 脚本语法和冲突保护、正式设置程序读取两种目录，以及 ZIP 完整性；尚未执行便携版注册和应用内输入实测。R13 暂未另提 GitHub Issue。
+便携修改入口是 `crates/qingjian-platform/src/dirs/` 与 `apps/windows/portable/`。已验证路径识别、普通模式回退、Windows PowerShell 脚本语法和冲突保护、正式设置程序读取两种目录，以及 ZIP 完整性；尚未执行便携版注册和应用内输入实测。系统绘制文字样式已编译，但尚未在实际输入场景验证。

@@ -106,13 +106,11 @@ impl Builder<'_> {
                         Tone::Pos => pos.as_ref().unwrap_or(faint),
                         Tone::Separator => separator.as_ref().unwrap_or(faint),
                     };
-                    let color = self
-                        .theme
-                        .text_color(
-                            "annotation",
-                            ctx.annotation_selected(bind),
-                            self.color(color, ctx),
-                        );
+                    let color = self.theme.text_color(
+                        "annotation",
+                        ctx.annotation_selected(bind),
+                        self.color(color, ctx),
+                    );
                     let visual = Visual::Text {
                         text: segment.clone(),
                         style: self.text_style(font, color).stroked(stroke),

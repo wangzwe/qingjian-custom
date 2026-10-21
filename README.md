@@ -1,13 +1,13 @@
 # 青简 Windows 非官方定制版
 
 本仓库由 **wangzwe** 基于 [qingjian-team/qingjian](https://github.com/qingjian-team/qingjian) 修改，
-整体按 **GPL-3.0-or-later** 开源；非官方发行，修改日期 2026-10-20。
+整体按 **GPL-3.0-or-later** 开源；非官方发行，修改日期 2026-10-21。
 
-**[下载便携版与对应源码](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable1)** ·
+**[下载便携版与对应源码](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable3)** ·
 [使用说明](docs/custom/portable.md) · [完整修改清单](docs/custom/requirements.md) ·
 [构建步骤](docs/custom/build.md) · [许可及来源声明](CUSTOM-NOTICE.md)
 
-- 候选词与译文分别设置字体、加粗、颜色。
+- 候选词与译文分别设置字体、加粗、字号、普通颜色及选中颜色；系统绘制同样支持。
 - 竖排第一项靠近光标，方向键跟随屏幕方向；窗口距离、背景、阴影、边距可调。
 - 译文支持表格对齐或固定间距，词性可置于译词后。
 - 便携版数据保存在 userdata；首次启用仍需管理员注册，不能与安装版同时注册。
