@@ -22,6 +22,7 @@ PORTABLE_DICTIONARIES = {
     "qingjian-math-naer.tsv",
     "qingjian-math-open-supplemented.tsv",
 }
+OPTIONAL_PORTABLE_DICTIONARIES = {"qingjian-math-wanxiang-extra.tsv"}
 
 
 def stage(destination: Path, guide: Path, dictionaries: Path | None = None) -> Path:
@@ -68,6 +69,8 @@ def stage(destination: Path, guide: Path, dictionaries: Path | None = None) -> P
         target_dicts.mkdir()
         for name in sorted(PORTABLE_DICTIONARIES):
             shutil.copy2(dictionaries / name, target_dicts / name)
+        for name in sorted(OPTIONAL_PORTABLE_DICTIONARIES & found):
+            shutil.copy2(dictionaries / name, target_dicts / name)
     # Windows PowerShell 5.1 需要 BOM 才能可靠读取中文提示。
     (root / "portable.ps1").write_text(
         (Path(__file__).parent / "portable.ps1").read_text(encoding="utf-8-sig"), encoding="utf-8-sig"
@@ -97,17 +100,18 @@ def archive(root: Path, output: Path) -> None:
     if root.name != FOLDER or not (root / "qingjian-portable.txt").is_file():
         raise RuntimeError("不是本次便携包目录")
     # 不允许把试运行或个人迁移产生的数据发布出去。
-    allowed_files = {"README.txt"}
+    allowed_files = {"README.txt", "user-glossary-en.tsv", "README-个人英语译文.md"}
     dicts = root / "userdata/dicts"
-    unexpected_roots = {path.name for path in (root / "userdata").iterdir()} - {"README.txt", "dicts"}
+    unexpected_roots = {path.name for path in (root / "userdata").iterdir()} - (allowed_files | {"dicts"})
     if unexpected_roots:
         raise RuntimeError("userdata 含有非词库个人数据，拒绝打包")
     if dicts.exists():
-        allowed_dict_files = PORTABLE_DICTIONARIES
+        allowed_dict_files = PORTABLE_DICTIONARIES | OPTIONAL_PORTABLE_DICTIONARIES
         unexpected = {path.name for path in dicts.iterdir() if path.is_file()} - allowed_dict_files
+        unexpected = {name for name in unexpected if not (name.startswith("README-") and name.endswith(".md"))}
         if unexpected or any(path.is_dir() for path in dicts.iterdir()):
             raise RuntimeError("userdata/dicts 含有便携词库清单以外的内容，拒绝打包")
-        if {path.name for path in dicts.iterdir()} != allowed_dict_files:
+        if not PORTABLE_DICTIONARIES.issubset({path.name for path in dicts.iterdir()}):
             raise RuntimeError("便携词库不完整，拒绝打包")
     for path in (root / "userdata").iterdir():
         if path.is_file() and path.name not in allowed_files:
