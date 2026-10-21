@@ -1,6 +1,6 @@
 # 定制版构建与打包
 
-对应分支 `custom-windows`，本次发布标签 `custom3-portable3`。以该标签的源码为准。
+对应分支 `custom-windows`，本次发布标签 `custom3-portable4`。以该标签的源码为准。
 构建环境：Windows 11 x64、Rust 1.96.0（MSVC）、Visual Studio 2022 C++ 工具、
 Windows SDK、Python 3。不要求使用开发者电脑上的绝对路径。
 
@@ -25,10 +25,11 @@ https://api.nuget.org/v3-flatcontainer/microsoft.windowsappsdk.runtime/2.4.0/mic
 
 ```powershell
 python apps/windows/portable/package.py --stage dist --guide docs/custom/portable.md
-python apps/windows/portable/package.py --archive dist/Qingjian-custom3-portable3 --output qingjian-custom3-portable3-windows-x86_64.zip
+python apps/windows/portable/package.py --stage target/portable4-stage --guide docs/custom/portable.md --dictionaries "F:\1a实用软件\1-青简输入法自改\0-词库汇总大全"
+python apps/windows/portable/package.py --archive target/portable4-stage/Qingjian-custom3-portable4 --output target/qingjian-custom3-portable4-windows-x86_64.zip
 ```
 
-`custom3-portable3` 延续 portable2 附加的万象通用词库、数学补充词条和英语译文。以 portable2 ZIP 为数据基底，解压后将目录改名为 `Qingjian-custom3-portable3`，用本次 x64 / x86 构建覆盖其中的服务程序、设置程序和两份 TSF DLL；更新 `qingjian-portable.txt` 与本说明，重新生成包内 `MANIFEST-SHA256.txt`，再压成 ZIP 并计算外层 SHA256。不要把本机的 `userdata` 配置或学习记录带进发行包。
+便携包的两份注册 DLL 固定使用 `qingjian_tsf-custom3-portable1.dll` 与 `qingjian_tsf-custom3-portable1-x86.dll`，并由启停脚本检查相同名称。包内 `userdata/dicts` 仅允许发布清单中的 9 份词库文件；禁止加入个人配置、学习数据或其他文件。重新生成 `MANIFEST-SHA256.txt` 后，再压成 ZIP 并计算外层 SHA256。
 
 向他人发布前，将 CUSTOM-NOTICE.md、GPL LICENSE 和第三方组件的许可/署名文件
 放进便携包，并在同一个 Release 提供本标签的完整源码及 SHA256 校验值。

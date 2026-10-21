@@ -35,6 +35,7 @@ use super::layered::{self, Layered};
 use super::monitor;
 use super::painter::SharedPainter;
 use super::window_class::WindowClass;
+use crate::dispatch::RenderSettings;
 
 const CLASS_NAME: PCWSTR = w!("QingjianCandidateWindow");
 static CLASS: WindowClass = WindowClass::new();
@@ -90,6 +91,8 @@ pub(crate) struct CandidateWindow {
 
     font_sizes: Cell<(FontSize, FontSize)>,
 
+    render_settings: RefCell<Option<RenderSettings>>,
+
     gap: Cell<i32>,
 
     shadow: Cell<bool>,
@@ -140,29 +143,38 @@ impl CandidateWindow {
                 (String::new(), false, String::new(), String::new()),
             ]),
             font_sizes: Cell::new((FontSize::default(), FontSize::default())),
+            render_settings: RefCell::new(None),
             gap: Cell::new(-1),
             shadow: Cell::new(false),
         })
     }
 
-    pub(crate) fn configure_gap(&self, gap: i32, shadow: bool) {
-        self.gap.set(gap.clamp(-1, 40));
-        self.shadow.set(shadow);
+    pub(crate) fn configure_render_settings(&self, settings: &RenderSettings) {
+        self.gap.set(settings.candidate_gap.clamp(-1, 40));
+        self.shadow.set(settings.candidate_shadow);
+        self.text_styles.replace(settings.text_styles.clone());
+        self.font_sizes.set(settings.font_sizes);
+        self.render_settings.replace(Some(settings.clone()));
+        let mut data = self.data.borrow_mut();
+        data.annotation_pos_after = settings.annotation_pos_after;
+        data.theme = Rc::new(self.build_theme(self.dpi.get(), self.dark.get()));
     }
 
-    pub(crate) fn configure_text_styles(
-        &self,
-        text_styles: &[(String, bool, String, String); 2],
-        font_sizes: (FontSize, FontSize),
-    ) {
-        self.text_styles.replace(text_styles.clone());
-        self.font_sizes.set(font_sizes);
-        self.data.borrow_mut().theme = Rc::new(Theme::with_text_styles(
-            self.dpi.get(),
-            self.dark.get(),
-            &self.text_styles.borrow(),
-            self.font_sizes.get(),
-        ));
+    fn build_theme(&self, dpi: u32, dark: bool) -> Theme {
+        let mut theme =
+            Theme::with_text_styles(dpi, dark, &self.text_styles.borrow(), self.font_sizes.get());
+        if let Some(settings) = self.render_settings.borrow().as_ref() {
+            theme = theme.with_candidate_box(
+                &settings.candidate_background,
+                settings.candidate_padding,
+                settings.candidate_row_padding,
+                settings.candidate_row_gap,
+                settings.annotation_table,
+                settings.annotation_gap,
+                dpi,
+            );
+        }
+        theme
     }
 
     fn place(&self, anchor: RECT, content: (i32, i32), overhang: (i32, i32)) -> (i32, i32) {
@@ -357,12 +369,7 @@ impl CandidateWindow {
         self.log_dpi(caret, window_dpi, monitor_dpi, dpi);
         let dark = resolve_dark(self.data.borrow().appearance);
         if dpi != self.dpi.get() || dark != self.dark.get() {
-            self.data.borrow_mut().theme = Rc::new(Theme::with_text_styles(
-                dpi,
-                dark,
-                &self.text_styles.borrow(),
-                self.font_sizes.get(),
-            ));
+            self.data.borrow_mut().theme = Rc::new(self.build_theme(dpi, dark));
             self.dpi.set(dpi);
             self.dark.set(dark);
         }

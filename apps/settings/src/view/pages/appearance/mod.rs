@@ -118,7 +118,14 @@ pub fn appearance(ui: &mut Ui<Message>, page: &Page) -> Result<Vec<NodeId>, Rend
     out.push(group(ui, theme, &[renderer, font, candidate, annotation])?);
 
     if independent_style {
-        out.extend(text_style::controls(ui, page, own, true, true)?);
+        // Windows GDI consumes the same candidate box and annotation layout settings.
+        out.extend(text_style::controls(
+            ui,
+            page,
+            own || independent_style,
+            true,
+            true,
+        )?);
     }
 
     let animations = toggle(

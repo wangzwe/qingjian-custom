@@ -222,7 +222,7 @@ delete_candidate = "shift"
 /// 首次运行写出的模板：默认值全部列出并注释，用户改一处即可。`[shortcut]` 的修饰键与 `[apps]` 分平台，
 /// 见 [`template_shortcut_keys!`] / [`template_apps!`]。
 pub const TEMPLATE: &str = concat!(
-    r#"# 青简输入法配置。保存后自动生效；也可以在菜单栏的输入法菜单里改。
+    r##"# 青简输入法配置。保存后自动生效；也可以在菜单栏的输入法菜单里改。
 
 [general]
 # 学习语言（en 英语 / ja 日语 / es 西班牙语 / de 德语 / off 不显示译文）：候选旁显示哪种语言的译文，要有对应的释义表才生效
@@ -238,6 +238,17 @@ appearance = "system"
 theme = "qingjian"
 # 候选窗口排布：vertical 竖排 / horizontal 横排（横排只给高亮候选显示译文）
 layout = "vertical"
+# 候选框样式：间距以逻辑像素计；-1 表示沿用主题值
+candidate_gap = 0
+candidate_background = "#F2F2F2"
+candidate_padding = 2
+candidate_row_padding = 1
+candidate_row_gap = 2
+candidate_shadow = false
+# 竖排译文：false 为固定间距（不按最长中文词对齐），间距 4 px；词性跟在译文后
+annotation_table = false
+annotation_gap = 4
+annotation_pos_after = true
 # 横排时 ↑ / ↓ 把单行展开成 6 行矩阵并换行（一行一页候选），← / → 改为在候选之间移动（拼音光标用 ⌥←/→、⌘←/→），
 # Esc 第一下先收回单行。缺省 false：横排下 ↑ / ↓ 逐个移动高亮、← / → 移动拼音光标，与以前一样。只有 macOS 用
 horizontal_grid = false
@@ -246,8 +257,8 @@ renderer = "qingjian"
 # 候选窗口字体（字族名，如 "LXGW WenKai"）；空为系统字体。只对青简渲染器生效，没装这个字体时自动回到系统字体
 font = ""
 # 候选字、译文的字号（点），盖过主题；0 用主题的。只对青简渲染器生效
-candidate_font_size = 0
-annotation_font_size = 0
+candidate_font_size = 16
+annotation_font_size = 16
 # 候选窗口的过渡动画（高亮滑动、主题里的循环动画）；false 时直接跳到位，与系统「减弱动态效果」一样
 animations = true
 # 组句中的拼音显示在哪：both 行内和候选窗口 / inline 只在行内 / window 只在候选窗口（应用里不放 marked text）
@@ -336,7 +347,7 @@ question_mark = false
 # 候选高亮由哪对方向键移动：updown 用 ↑ / ↓ 移高亮、← / → 移拼音光标（缺省）；leftright 改用 ← / → 移高亮
 # leftright 时两键把「拼音行 + 候选栏」当成一条从左到右的序列走：→ 到拼音光标末位溢出成选词，← 到候选首位回拼音光标；↑ / ↓ 不做事。只有 Windows 用
 highlight_keys = "updown"
-"#,
+"##,
     template_shortcut_keys!(),
     r#"
 [fuzzy]

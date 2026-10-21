@@ -30,7 +30,7 @@ candidate_gap = 0
     assert!(old.general.candidate_font.is_empty());
     assert!(old.general.annotation_font.is_empty());
     assert!(!old.general.candidate_bold);
-    assert_eq!(old.general.candidate_gap, -1);
+    assert_eq!(old.general.candidate_gap, 0);
 }
 
 #[test]
@@ -268,9 +268,19 @@ fn missing_file_is_default() {
 #[test]
 fn annotation_layout_defaults_and_round_trip() {
     let default: Config = toml::from_str("[general]\n").unwrap();
-    assert!(default.general.annotation_table);
-    assert_eq!(default.general.annotation_gap, 8);
+    assert_eq!(default.general.renderer, crate::CandidateRenderer::Qingjian);
+    assert_eq!(default.general.candidate_font_size.get(), Some(16.0));
+    assert_eq!(default.general.annotation_font_size.get(), Some(16.0));
+    assert_eq!(default.general.candidate_background, "#F2F2F2");
+    assert_eq!(default.general.candidate_padding, 2);
+    assert_eq!(default.general.candidate_row_padding, 1);
+    assert_eq!(default.general.candidate_row_gap, 2);
+    assert_eq!(default.general.candidate_gap, 0);
+    assert!(!default.general.candidate_shadow);
+    assert!(!default.general.annotation_table);
+    assert_eq!(default.general.annotation_gap, 4);
     assert!(default.general.annotation_pos_after);
+    assert!(!default.general.default_english);
     let config: Config = toml::from_str(
         "[general]\nannotation_table = false\nannotation_gap = 12\nannotation_pos_after = false\n",
     )
@@ -294,7 +304,8 @@ fn font_sizes_and_animations_parse_and_default() {
     assert_eq!(config.general.annotation_font_size.get(), Some(13.5));
     assert!(!config.general.animations);
     let default = Config::default();
-    assert_eq!(default.general.candidate_font_size.get(), None);
+    assert_eq!(default.general.candidate_font_size.get(), Some(16.0));
+    assert_eq!(default.general.annotation_font_size.get(), Some(16.0));
     assert!(default.general.animations);
     assert_eq!(FontSize(-3.0).get(), None);
 }

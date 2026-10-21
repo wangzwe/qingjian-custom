@@ -1,4 +1,4 @@
-//! 附加词库：随包的领域词库（`Resources/dicts/`，按 `[dictionaries] domains` 挑）与用户目录 `dicts/` 下的 `.qj`（或 TSV）
+//! 附加词库：随包的领域词库（`Resources/dicts/`，按 `[dictionaries] domains` 挑）与用户目录 `dicts/` 下的 `.qj`、TSV 或 Rime YAML
 //! 文件（按 `[dictionaries] disabled` 过滤），加载后一起接到 Engine 上。
 
 use std::path::{Path, PathBuf};
@@ -7,8 +7,8 @@ use std::time::SystemTime;
 use crate::DictionariesConfig;
 use qingjian_dictionary::Dictionary;
 
-/// 目录里能加载的扩展名，靠前的优先：同名的 `.qj` 与 `.tsv` 只取 `.qj`（开发目录里两者并存）。
-const EXTENSIONS: [&str; 2] = ["qj", "tsv"];
+/// 目录里能加载的扩展名，靠前的优先：同名的 `.qj`、`.tsv` 与 Rime YAML 只取优先级最高的一个。
+const EXTENSIONS: [&str; 4] = ["qj", "tsv", "dict.yaml", "yaml"];
 
 /// 可加载文件的快照：用于发现新增、移除与同名更新，不读取词库正文。
 pub fn snapshot(dir: &Path) -> Vec<(PathBuf, Option<SystemTime>, u64)> {
@@ -35,9 +35,14 @@ pub fn list(dir: &Path) -> Vec<(String, PathBuf)> {
             if name.starts_with('.') {
                 return None;
             }
-            let extension = p.extension()?.to_str()?;
-            let rank = EXTENSIONS.iter().position(|e| *e == extension)?;
-            let stem = p.file_stem()?.to_str()?.to_owned();
+            let file_name = p.file_name()?.to_str()?;
+            let extension = EXTENSIONS.iter().find(|suffix| {
+                file_name
+                    .to_ascii_lowercase()
+                    .ends_with(&format!(".{suffix}"))
+            })?;
+            let rank = EXTENSIONS.iter().position(|e| e == extension)?;
+            let stem = file_name[..file_name.len() - extension.len() - 1].to_owned();
             Some((stem, rank, p))
         })
         .collect();
@@ -78,7 +83,21 @@ pub fn load(
 }
 
 fn open(stem: &str, path: &Path) -> Option<Dictionary> {
-    match Dictionary::from_path(path) {
+    let result = if path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| {
+            name.to_ascii_lowercase().ends_with(".dict.yaml")
+                || name.to_ascii_lowercase().ends_with(".yaml")
+        }) {
+        std::fs::read_to_string(path)
+            .map(|text| qingjian_dictionary::import::to_tsv(&text).tsv)
+            .map_err(qingjian_dictionary::DictionaryError::from)
+            .and_then(|tsv| Dictionary::parse(&tsv))
+    } else {
+        Dictionary::from_path(path)
+    };
+    match result {
         Ok(dictionary) => {
             tracing::info!(
                 name = %dictionary.metadata().map_or(stem, |m| m.name.as_str()),
@@ -105,7 +124,13 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("qingjian-extra-dicts-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
-        for name in ["idioms.qj", "idioms.tsv", "food.tsv", "notes.txt"] {
+        for name in [
+            "idioms.qj",
+            "idioms.tsv",
+            "food.tsv",
+            "notes.txt",
+            "rime.dict.yaml",
+        ] {
             std::fs::write(dir.join(name), b"").unwrap();
         }
 
@@ -114,7 +139,14 @@ mod tests {
             .iter()
             .map(|(stem, path)| (stem.as_str(), path.file_name().unwrap().to_str().unwrap()))
             .collect();
-        assert_eq!(names, [("food", "food.tsv"), ("idioms", "idioms.qj")]);
+        assert_eq!(
+            names,
+            [
+                ("food", "food.tsv"),
+                ("idioms", "idioms.qj"),
+                ("rime", "rime.dict.yaml")
+            ]
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -134,5 +166,17 @@ mod tests {
             .collect();
         assert_eq!(names, [("idioms", "idioms.qj")]);
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn bundled_user_rime_yaml_is_loaded_as_a_dictionary() {
+        let dir = std::env::temp_dir().join(format!("qingjian-rime-dict-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("small.dict.yaml");
+        std::fs::write(&path, "---\nname: small\n...\n你好\tni hao\t10\n").unwrap();
+        let dictionary = open("small", &path).unwrap();
+        assert_eq!(dictionary.len(), 1);
+        let _ = std::fs::remove_dir_all(dir);
     }
 }

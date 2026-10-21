@@ -24,19 +24,23 @@ pub(super) fn controls(
     } else {
         format!("{gap} px")
     };
-    let input = Stepper::new(&label).limits(gap > -1, gap < 40).build(
-        ui,
-        &page.theme,
-        "candidate-gap",
-        Message::set("general", "candidate_gap", i64::from((gap - 1).max(-1))),
-        Message::set("general", "candidate_gap", i64::from((gap + 1).min(40))),
-    )?;
-    let reset = Button::new("恢复自动间距").disabled(gap < 0).build(
-        ui,
-        &page.theme,
-        "reset-gap",
-        Message::set("general", "candidate_gap", -1_i64),
-    )?;
+    let input = Stepper::new(&label)
+        .limits(enabled && gap > -1, enabled && gap < 40)
+        .build(
+            ui,
+            &page.theme,
+            "candidate-gap",
+            Message::set("general", "candidate_gap", i64::from((gap - 1).max(-1))),
+            Message::set("general", "candidate_gap", i64::from((gap + 1).min(40))),
+        )?;
+    let reset = Button::new("恢复自动间距")
+        .disabled(!enabled || gap < 0)
+        .build(
+            ui,
+            &page.theme,
+            "reset-gap",
+            Message::set("general", "candidate_gap", -1_i64),
+        )?;
     out.push(section_title(ui, &page.theme, "候选框位置")?);
     out.push(
         SettingRow::new("与光标间距")
@@ -71,7 +75,13 @@ pub(super) fn controls(
             popup,
             (
                 if family.is_empty() {
-                    "跟随主题"
+                    if page.settings.config.general.renderer
+                        == qingjian_platform::CandidateRenderer::System
+                    {
+                        "Microsoft YaHei UI"
+                    } else {
+                        "跟随主题"
+                    }
                 } else {
                     family
                 },

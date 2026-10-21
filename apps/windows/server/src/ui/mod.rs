@@ -286,8 +286,7 @@ fn apply(
             }
         }
         UiCommand::Configure(settings) => {
-            window.configure_gap(settings.candidate_gap, settings.candidate_shadow);
-            window.configure_text_styles(&settings.text_styles, settings.font_sizes);
+            window.configure_render_settings(&settings);
             Painter::configure(painter, &settings);
         }
     }

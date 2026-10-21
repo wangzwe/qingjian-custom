@@ -1,12 +1,12 @@
 # 青简候选窗口需求与修改汇总
 
-整理日期：2026-10-21。本文记录本次定制的需求、三版修改结果及后续查阅入口，以第三版的实际行为为准。
+整理日期：2026-10-21。本文记录本次定制的需求、四版修改结果及后续查阅入口，以第四版的实际行为为准。
 
 适用范围：Windows 本地修改版。候选字与译文的独立字体、加粗、字号及颜色支持青简渲染器和系统绘制；其他新增外观设置由青简渲染器提供。文中的“已实现”表示已完成本地源码修改、构建与检查，不代表官方已经合并。
 
 源码仓库：[qingjian-team/qingjian](https://github.com/qingjian-team/qingjian)。基准提交：`c97ff2b61933d6fcd845ee4f4f470faf3ea83bf6`。
 
-当前解压便携版为 **custom3-portable3**，包含万象词库、数学补充词条、英语译文及最新系统绘制文字样式设置，使用方式见第 9 节。
+当前解压便携版为 **custom3-portable4**，包含 9 份外部词库、万象与数学词库、英语译文，以及系统绘制下完整候选框和译文外观设置，使用方式见第 9 节。
 
 ## 1. 需求与修改清单
 
@@ -24,7 +24,7 @@
 | R10 | 中英文之间保持固定距离，不被其他行的长中文拉开 | 竖排增加「表格对齐 / 固定间距」选择；固定模式逐行计算译文位置 | 第三版 |
 | R11 | 可以调整中英文间距 | 固定间距模式下可设 0–64 px，默认 8 px | 第三版 |
 | R12 | 英文词性显示在对应译词后面，并提供设置入口 | 新增「译文前 / 译文后」选择，默认后置；多个义项分别处理 | 第三版 |
-| R13 | 提供免安装便携版本 | 解压目录运行，配置和学习数据放入 userdata；附启用、启动、设置、状态、停用脚本，首次启用仍需管理员注册输入法 | custom3-portable3 |
+| R13 | 提供免安装便携版本 | 解压目录运行，配置和学习数据放入 userdata；附启用、启动、设置、状态、停用脚本，首次启用仍需管理员注册输入法 | custom3-portable4 |
 
 这些修改调整显示与交互，不改变候选词排序权重、数字编号或译词本身的内容。
 
@@ -95,7 +95,7 @@
 |---|---|---|
 | 候选文字 → 字体 | `candidate_font` | 空值沿用主题／基础字体；未安装的字体会回退 |
 | 译文文字 → 字体 | `annotation_font` | 同上，与候选字体独立 |
-| 候选字号 / 译文字号 | `candidate_font_size` / `annotation_font_size` | 0 使用当前绘制引擎默认字号；这是原有控制 |
+| 候选字号 / 译文字号 | `candidate_font_size` / `annotation_font_size` | 默认 16 px；候选文字和译文分别设置 |
 | 候选文字 / 译文文字 → 加粗 | `candidate_bold` / `annotation_bold` | 默认 false；开启使用 700 字重，关闭沿用主题原字重 |
 | 候选文字 → 文字颜色 / 选中时颜色 | `candidate_color` / `candidate_highlight_color` | `#RRGGBB`；选中颜色留空时沿用自定义文字颜色；两项都空则跟随主题 |
 | 译文文字 → 文字颜色 / 选中时颜色 | `annotation_color` / `annotation_highlight_color` | `#RRGGBB`；选中颜色留空时沿用自定义文字颜色；两项都空则跟随主题 |
@@ -106,12 +106,12 @@
 
 | 设置入口 | 配置项 | 范围与默认值 |
 |---|---|---|
-| 候选框位置 → 与光标间距 | `candidate_gap` | 默认 -1，即自动；自定义 0–40，0 最靠近输入行 |
-| 候选框样式 → 候选框背景色 | `candidate_background` | 默认空值，跟随主题；可填 `#F2F2F2` |
+| 候选框位置 → 与光标间距 | `candidate_gap` | 默认 0，即贴近输入行；可设 0–40 |
+| 候选框样式 → 候选框背景色 | `candidate_background` | 默认浅灰 `#F2F2F2`；可填写 `#RRGGBB` |
 | 候选框样式 → 边缘阴影 | `candidate_shadow` | 默认 false，即关闭 |
-| 候选框样式 → 候选框内边距 | `candidate_padding` | 默认 -1，沿用主题；可设 0–32 |
-| 候选框样式 → 每条候选内边距 | `candidate_row_padding` | 默认 -1；当前定制布局使用 4 px 对称留白，可显式设 0–32 |
-| 候选框样式 → 候选行间距 | `candidate_row_gap` | 默认 0，可设 0–24 |
+| 候选框样式 → 候选框内边距 | `candidate_padding` | 默认 2 px；可设 0–32 |
+| 候选框样式 → 每条候选内边距 | `candidate_row_padding` | 默认 1 px；可设 0–32 |
+| 候选框样式 → 候选行间距 | `candidate_row_gap` | 默认 2 px，可设 0–24 |
 
 几个距离分别控制不同位置：与光标间距是框外距离，候选框内边距是窗口边缘到内容的距离，每条候选内边距是词语到所在格边缘的距离，候选行间距是相邻格之间的距离。
 
@@ -121,23 +121,23 @@
 
 | 设置入口 | 配置项 | 范围与默认值 |
 |---|---|---|
-| 译文排布 → 竖排译文布局 | `annotation_table` | 默认 true，即表格模式；false 为固定间距 |
-| 译文排布 → 中英文间距 | `annotation_gap` | 默认 8，可设 0–64，仅固定间距模式生效 |
+| 译文排布 → 竖排译文布局 | `annotation_table` | 默认 false，即固定间距；true 为表格模式 |
+| 译文排布 → 中英文间距 | `annotation_gap` | 默认 4，可设 0–64，仅固定间距模式生效 |
 | 译文排布 → 词性位置 | `annotation_pos_after` | 默认 true，即译文后；false 为译文前 |
 | 候选页 → 译词显示词性 | `translation_pos` | 原有开关，控制词性是否显示；与位置选项分别控制 |
 
-如希望直接编辑配置，可将下面的字段合并到已有 `[general]` 中，不要重复创建同名分节。示例使用浅灰背景、固定间距及词性后置，数值可按喜好修改：
+以上均为便携版默认值。系统绘制（GDI）和青简渲染器均提供这些设置。若需直接编辑配置，可将下面字段合并到已有 `[general]` 中，不要重复创建同名分节：
 
 ```toml
 [general]
 candidate_background = "#F2F2F2"
 candidate_shadow = false
 candidate_gap = 0
-candidate_padding = 8
-candidate_row_padding = 4
-candidate_row_gap = 3
+candidate_padding = 2
+candidate_row_padding = 1
+candidate_row_gap = 2
 annotation_table = false
-annotation_gap = 8
+annotation_gap = 4
 annotation_pos_after = true
 translation_pos = true
 ```
@@ -150,7 +150,7 @@ translation_pos = true
 | 第二版 custom2 | 倒序方向键修正、背景、阴影、留白、上下居中 | [第二版安装说明](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable1) |
 | 第三版 custom3 | 固定中英文间距、布局切换、词性位置 | [第三版安装说明](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable1) |
 
-当前使用第三版即可，无需依次安装前三版：
+第四版基于第三版增加默认外观配置、系统绘制下的完整设置支持及便携词库导入；无需依次安装前三版：
 
 - [第三版 Windows 安装包](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable1)，约 146.3 MiB。
 - [第三版累计源码补丁](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable1)。
@@ -237,10 +237,10 @@ git apply C:\path\to\qingjian-customization-v3.patch
 
 ## 9. 解压便携包（2026-10-21）
 
-- [便携 ZIP](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable3)。
+- [便携 ZIP](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable4)。
 - [便携版使用说明与迁移步骤](docs/custom/portable.md)。
-- [万象词库、数学补充词条与英语译文说明](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable3)。
-- [含便携支持的累计源码补丁](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable3)。
+- [万象词库、数学补充词条、9 份外部词库与英语译文说明](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable4)。
+- [含便携支持的累计源码补丁](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable4)。
 
 这份包不需要安装向导，程序不复制到 Program Files，不新增开机启动项。`qingjian-portable.txt` 使 Server 和设置程序把配置、学习记录与自定义主题放在程序同目录的 `userdata`；没有标记时仍使用安装版原来的数据目录。运行诊断日志仍留在 `%LOCALAPPDATA%\Qingjian\logs`。
 

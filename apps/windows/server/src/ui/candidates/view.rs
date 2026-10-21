@@ -49,11 +49,33 @@ pub(super) fn preferred_size(hdc: HDC, data: &RenderData) -> SIZE {
 fn vertical_size(hdc: HDC, data: &RenderData) -> (i32, i32) {
     let theme = &data.theme;
     let columns = columns(hdc, theme, &data.rows);
-    let mut body_width = columns.index_width + theme.column_gap + columns.text_width;
-    if columns.annotation_width > 0 {
-        body_width += theme.column_gap + columns.annotation_width;
-    }
-    let mut body_height = columns.row_height * data.rows.len() as i32;
+    let mut body_width = if theme.annotation_table {
+        columns.index_width
+            + theme.column_gap
+            + columns.text_width
+            + if columns.annotation_width > 0 {
+                theme.column_gap + columns.annotation_width
+            } else {
+                0
+            }
+    } else {
+        data.rows
+            .iter()
+            .map(|row| {
+                columns.index_width
+                    + theme.column_gap
+                    + row_word_width(hdc, theme, row)
+                    + if row.annotation.is_empty() {
+                        0
+                    } else {
+                        theme.annotation_gap + annotation_width(hdc, theme, row)
+                    }
+            })
+            .max()
+            .unwrap_or(0)
+    };
+    let mut body_height = columns.row_height * data.rows.len() as i32
+        + theme.row_gap * data.rows.len().saturating_sub(1) as i32;
     if let Some(footer) = &data.footer {
         let size = measure(hdc, theme.index_font, footer);
         body_width = body_width.max(size.cx);
@@ -81,7 +103,8 @@ fn horizontal_size(hdc: HDC, data: &RenderData) -> (i32, i32) {
             + code_width(hdc, theme, row);
         row_height = row_height.max(text.cy + theme.row_padding * 2);
     }
-    width += theme.column_gap * (data.rows.len().saturating_sub(1)) as i32 + highlight_inset * 2;
+    width += (theme.column_gap + theme.row_gap) * (data.rows.len().saturating_sub(1)) as i32
+        + highlight_inset * 2;
     if let Some(footer) = &data.footer {
         width += theme.column_gap + measure(hdc, theme.index_font, footer).cx;
     }
@@ -246,13 +269,14 @@ fn draw_rows(hdc: HDC, data: &RenderData, mut y: i32, width: i32) {
     let columns = columns(hdc, theme, &data.rows);
     let text_x = theme.padding + columns.index_width + theme.column_gap;
     let annotation_x = text_x + columns.text_width + theme.column_gap;
+    let row_step = columns.row_height + theme.row_gap;
     let footer_height = data.footer.as_ref().map_or(0, |footer| {
         measure(hdc, theme.index_font, footer).cy + theme.row_padding
     });
     let start = y;
     for (i, row) in data.rows.iter().enumerate() {
         if data.reversed {
-            y = start + footer_height + (data.rows.len() - 1 - i) as i32 * columns.row_height;
+            y = start + footer_height + (data.rows.len() - 1 - i) as i32 * row_step;
         }
         if i == data.highlight {
             let rect = RECT {
@@ -276,7 +300,11 @@ fn draw_rows(hdc: HDC, data: &RenderData, mut y: i32, width: i32) {
         );
         let selected = i == data.highlight;
         draw_word(hdc, theme, row, text_x, baseline, small_offset, selected);
-        let mut x = annotation_x;
+        let mut x = if theme.annotation_table {
+            annotation_x
+        } else {
+            text_x + row_word_width(hdc, theme, row) + theme.annotation_gap
+        };
         for (segment, tone) in &row.annotation {
             x += draw_text(
                 hdc,
@@ -287,7 +315,7 @@ fn draw_rows(hdc: HDC, data: &RenderData, mut y: i32, width: i32) {
                 segment,
             );
         }
-        y += columns.row_height;
+        y += row_step;
     }
     if let Some(footer) = &data.footer {
         let size = measure(hdc, theme.index_font, footer);
@@ -355,7 +383,7 @@ fn draw_horizontal(hdc: HDC, data: &RenderData, y: i32, width: i32) {
             small_offset,
             i == data.highlight,
         );
-        x += item_width + theme.column_gap;
+        x += item_width + theme.column_gap + theme.row_gap;
     }
     if let Some(footer) = &data.footer {
         let size = measure(hdc, theme.index_font, footer);
@@ -423,7 +451,9 @@ fn matrix_size(hdc: HDC, data: &RenderData) -> (i32, i32) {
     let info_height = line_height(hdc, theme.annotation_font) + theme.row_padding;
     (
         cells.width(theme.column_gap) + theme.padding / 2 * 2,
-        cells.row_height * grid_rows as i32 + info_height,
+        (cells.row_height + theme.row_gap) * grid_rows.saturating_sub(1) as i32
+            + cells.row_height
+            + info_height,
     )
 }
 
@@ -445,7 +475,7 @@ fn draw_matrix(hdc: HDC, data: &RenderData, y: i32, width: i32) {
         }
         let cell_width = cells.column_widths[i % columns];
         let x = origin + cells.offset(i % columns, theme.column_gap);
-        let row_y = y + cells.row_height * (i / columns) as i32;
+        let row_y = y + (cells.row_height + theme.row_gap) * (i / columns) as i32;
         let baseline = row_y + theme.row_padding;
         if i == data.highlight {
             fill_round_rect(
@@ -485,7 +515,10 @@ fn draw_matrix(hdc: HDC, data: &RenderData, y: i32, width: i32) {
     }
     // 信息行：页码靠右；左边先放被截断的高亮候选的完整文本，再放译文，放不下的截断
     let grid_rows = data.rows.len().div_ceil(columns);
-    let info_top = y + cells.row_height * grid_rows as i32 + theme.row_padding / 2;
+    let info_top = y
+        + (cells.row_height + theme.row_gap) * grid_rows.saturating_sub(1) as i32
+        + cells.row_height
+        + theme.row_padding / 2;
     let right = width - theme.padding;
     // 译文与完整文本的间距（10 点，按 padding 的 DPI 比例换算）
     let info_gap = theme.padding * 5 / 4;
@@ -665,11 +698,7 @@ fn columns(hdc: HDC, theme: &Theme, rows: &[Row]) -> Columns {
     for row in rows {
         let index = measure(hdc, theme.index_font, &row.index);
         let text = measure(hdc, theme.text_font, &row.text);
-        let annotation: i32 = row
-            .annotation
-            .iter()
-            .map(|(s, _)| measure(hdc, theme.annotation_font, s).cx)
-            .sum();
+        let annotation = annotation_width(hdc, theme, row);
         columns.index_width = columns.index_width.max(index.cx);
         columns.text_width = columns
             .text_width
@@ -678,6 +707,19 @@ fn columns(hdc: HDC, theme: &Theme, rows: &[Row]) -> Columns {
         columns.row_height = columns.row_height.max(text.cy + theme.row_padding * 2);
     }
     columns
+}
+
+fn annotation_width(hdc: HDC, theme: &Theme, row: &Row) -> i32 {
+    row.annotation
+        .iter()
+        .map(|(text, _)| measure(hdc, theme.annotation_font, text).cx)
+        .sum()
+}
+
+fn row_word_width(hdc: HDC, theme: &Theme, row: &Row) -> i32 {
+    measure(hdc, theme.text_font, &row.text).cx
+        + cloud_prefix_width(hdc, theme, row)
+        + code_width(hdc, theme, row)
 }
 
 /// 小字相对候选词往下挪多少才纵向居中（GDI y 向下，取一半差）。

@@ -55,6 +55,8 @@ pub(crate) struct RenderData {
     /// 译词旁是否显示词性标注（随帧下发的 `[general] translation_pos`）。
     pub(super) show_pos: bool,
 
+    pub(super) annotation_pos_after: bool,
+
     /// 输入状态，给主题显示中 / 英、简 / 繁等。
     pub(super) mode: Mode,
 }
@@ -77,6 +79,7 @@ impl RenderData {
             appearance: Appearance::default(),
             show_code: false,
             show_pos: true,
+            annotation_pos_after: true,
             mode: Mode::default(),
         }
     }
@@ -105,6 +108,7 @@ impl RenderData {
                     candidate,
                     self.show_code,
                     self.show_pos,
+                    self.annotation_pos_after,
                 );
                 if grid {
                     let labelled =

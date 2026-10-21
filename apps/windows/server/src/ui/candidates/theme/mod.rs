@@ -64,6 +64,13 @@ pub(crate) struct Theme {
     /// 列间距。
     pub column_gap: i32,
 
+    /// 候选格之间的间距，以及竖排译文对齐方式。
+    pub row_gap: i32,
+
+    pub annotation_table: bool,
+
+    pub annotation_gap: i32,
+
     /// 窗口圆角半径。
     pub corner_radius: i32,
 }
@@ -97,6 +104,9 @@ impl Theme {
             padding: scale(8),
             row_padding: scale(4),
             column_gap: scale(8),
+            row_gap: 0,
+            annotation_table: true,
+            annotation_gap: scale(8),
             corner_radius: scale(8),
         }
     }
@@ -127,6 +137,32 @@ impl Theme {
             .or(annotation)
             .unwrap_or(theme.gloss_color);
         theme
+    }
+
+    pub(crate) fn with_candidate_box(
+        mut self,
+        background: &str,
+        padding: i32,
+        row_padding: i32,
+        row_gap: i32,
+        annotation_table: bool,
+        annotation_gap: i32,
+        dpi: u32,
+    ) -> Self {
+        let scale = |px: i32| (px * dpi as i32) / 96;
+        if let Some(color) = parse_color(background) {
+            self.background = color;
+        }
+        if padding >= 0 {
+            self.padding = scale(padding.clamp(0, 32));
+        }
+        if row_padding >= 0 {
+            self.row_padding = scale(row_padding.clamp(0, 32));
+        }
+        self.row_gap = scale(row_gap.clamp(0, 24));
+        self.annotation_table = annotation_table;
+        self.annotation_gap = scale(annotation_gap.clamp(0, 64));
+        self
     }
 }
 

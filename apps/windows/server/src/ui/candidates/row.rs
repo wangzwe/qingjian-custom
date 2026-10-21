@@ -12,6 +12,7 @@ pub(crate) fn from_candidate(
     candidate: &Candidate,
     show_code: bool,
     show_pos: bool,
+    pos_after: bool,
 ) -> Row {
     let code = candidate
         .aux_code
@@ -27,7 +28,10 @@ pub(crate) fn from_candidate(
             if i > 0 || !annotation.is_empty() {
                 annotation.push((" · ".to_owned(), Tone::Separator));
             }
-            if show_pos && let Some(pos) = sense.part_of_speech {
+            if show_pos
+                && !pos_after
+                && let Some(pos) = sense.part_of_speech
+            {
                 annotation.push((format!("{pos} "), Tone::Pos));
             }
             let tone = if sense.fresh {
@@ -40,6 +44,12 @@ pub(crate) fn from_candidate(
                 if let Some(reading) = segment.reading {
                     annotation.push((format!("({reading})"), Tone::Faint));
                 }
+            }
+            if show_pos
+                && pos_after
+                && let Some(pos) = sense.part_of_speech
+            {
+                annotation.push((format!(" {pos}"), Tone::Pos));
             }
         }
     }
@@ -79,7 +89,7 @@ mod tests {
 
     #[test]
     fn part_of_speech_follows_the_frame_switch() {
-        let on = from_candidate(0, &candidate_with_gloss(), false, true);
+        let on = from_candidate(0, &candidate_with_gloss(), false, true, false);
         let joined: String = on
             .annotation
             .iter()
@@ -89,7 +99,7 @@ mod tests {
         assert!(joined.contains("develop"), "{joined}");
 
         // 关掉后词性段消失，译词与分隔结构原样保留
-        let off = from_candidate(0, &candidate_with_gloss(), false, false);
+        let off = from_candidate(0, &candidate_with_gloss(), false, false, false);
         let joined: String = off
             .annotation
             .iter()
@@ -105,7 +115,7 @@ mod tests {
         let mut candidate = candidate_with_gloss();
         candidate.translation.as_mut().unwrap().senses_mut()[0].part_of_speech = None;
         for show_pos in [true, false] {
-            let row = from_candidate(0, &candidate, false, show_pos);
+            let row = from_candidate(0, &candidate, false, show_pos, false);
             let joined: String = row
                 .annotation
                 .iter()
