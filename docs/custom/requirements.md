@@ -6,7 +6,7 @@
 
 源码仓库：[qingjian-team/qingjian](https://github.com/qingjian-team/qingjian)。基准提交：`c97ff2b61933d6fcd845ee4f4f470faf3ea83bf6`。
 
-当前解压便携版为 **custom3-portable4**，包含 9 份外部词库、万象与数学词库、英语译文，以及系统绘制下完整候选框和译文外观设置，使用方式见第 9 节。
+当前解压便携版为 **custom3-portable5**，包含 9 份外部词库、万象与数学词库、英语译文，以及系统绘制下完整候选框和译文外观设置，使用方式见第 9 节。
 
 ## 1. 需求与修改清单
 
@@ -24,7 +24,7 @@
 | R10 | 中英文之间保持固定距离，不被其他行的长中文拉开 | 竖排增加「表格对齐 / 固定间距」选择；固定模式逐行计算译文位置 | 第三版 |
 | R11 | 可以调整中英文间距 | 固定间距模式下可设 0–64 px，默认 8 px | 第三版 |
 | R12 | 英文词性显示在对应译词后面，并提供设置入口 | 新增「译文前 / 译文后」选择，默认后置；多个义项分别处理 | 第三版 |
-| R13 | 提供免安装便携版本 | 解压目录运行，配置和学习数据放入 userdata；附启用、启动、设置、状态、停用脚本，首次启用仍需管理员注册输入法 | custom3-portable4 |
+| R13 | 提供免安装便携版本 | 解压目录运行，配置和学习数据放入 userdata；附启用、启动、设置、状态、停用脚本，首次启用仍需管理员注册输入法 | custom3-portable5 |
 
 这些修改调整显示与交互，不改变候选词排序权重、数字编号或译词本身的内容。
 
@@ -149,13 +149,14 @@ translation_pos = true
 | 第一版 custom1 | 独立文字样式、竖排倒序、与光标间距 | [第一版安装说明](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable1) |
 | 第二版 custom2 | 倒序方向键修正、背景、阴影、留白、上下居中 | [第二版安装说明](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable1) |
 | 第三版 custom3 | 固定中英文间距、布局切换、词性位置 | [第三版安装说明](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable1) |
-| 第四版 custom3-portable4 | 系统绘制完整设置、默认外观值、中文默认模式和 9 份便携词库 | [第四版 Release](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable4) |
+| 第四版 custom3-portable4 | 系统绘制完整设置、默认外观值、中文默认模式和 9 份便携词库；入口脚本编码有误，已由第五版替代 | [第四版 Release](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable4) |
+| 第五版 custom3-portable5 | 修复 PowerShell 5.1 编码报错、恢复原始构建流程、增加发布前校验，保留第四版功能 | [第五版 Release](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable5) |
 
-第四版基于第三版增加默认外观配置、系统绘制下的完整设置支持及便携词库导入；无需依次安装前三版：
+第五版包含此前默认外观配置、系统绘制下的完整设置支持及便携词库导入，并修复入口脚本编码；无需依次安装旧版：
 
-- [第四版 Windows 便携包](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable4)。
-- [第四版累计源码补丁](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable4)。
-- [第四版 SHA-256 校验文件](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable4)。
+- [第五版 Windows 便携包](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable5)。
+- [第五版累计源码补丁](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable5)。
+- [第五版 SHA-256 校验文件](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable5)。
 
 安装器版本为 `0.2.2-dev-c97ff2b-custom3`。程序「关于」可能仍显示源码基础开发版本号，可通过新增的「译文排布」设置区辨认第三版。
 
@@ -163,11 +164,11 @@ translation_pos = true
 
 ### 补丁应用方法
 
-第四版补丁包含此前全部定制，应应用到上述基准提交的干净源码上，不要再叠加到已有定制的目录中。本次工作目录已经完成修改，不需要重复应用。
+第五版补丁包含此前全部定制，应应用到上述基准提交的干净源码上，不要再叠加到已有定制的目录中。本次工作目录已经完成修改，不需要重复应用。
 
 ```powershell
-git apply --check C:\path\to\qingjian-customization-portable4.patch
-git apply C:\path\to\qingjian-customization-portable4.patch
+git apply --check C:\path\to\qingjian-customization-portable5.patch
+git apply C:\path\to\qingjian-customization-portable5.patch
 ```
 
 ## 5. GitHub Issue 跟踪
@@ -238,10 +239,10 @@ git apply C:\path\to\qingjian-customization-portable4.patch
 
 ## 9. 解压便携包（2026-10-21）
 
-- [便携 ZIP](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable4)。
+- [便携 ZIP](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable5)。
 - [便携版使用说明与迁移步骤](docs/custom/portable.md)。
-- [万象词库、数学补充词条、9 份外部词库与英语译文说明](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable4)。
-- [含便携支持的累计源码补丁](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable4)。
+- [万象词库、数学补充词条、9 份外部词库与英语译文说明](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable5)。
+- [含便携支持的累计源码补丁](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable5)。
 
 这份包不需要安装向导，程序不复制到 Program Files，不新增开机启动项。`qingjian-portable.txt` 使 Server 和设置程序把配置、学习记录与自定义主题放在程序同目录的 `userdata`；没有标记时仍使用安装版原来的数据目录。运行诊断日志仍留在 `%LOCALAPPDATA%\Qingjian\logs`。
 
@@ -250,3 +251,7 @@ Windows TSF 输入法仍需注册。首次运行 `Enable.cmd` 会请求管理员
 脚本遇到其他目录的青简注册会拒绝覆盖。本次只制作和验证包，没有改变本机现有 custom3 安装版注册，也没有打包个人数据。迁移应先备份 `%APPDATA%\Qingjian`，卸载安装版后再启用便携包，具体见使用说明。
 
 便携修改入口是 `crates/qingjian-platform/src/dirs/` 与 `apps/windows/portable/`。已验证路径识别、普通模式回退、Windows PowerShell 脚本语法和冲突保护、正式设置程序读取两种目录，以及 ZIP 完整性；尚未执行便携版注册和应用内输入实测。系统绘制文字样式已编译，但尚未在实际输入场景验证。
+
+## portable5 构建审计补充
+
+修复 portable4 手工打包遗漏 UTF-8 BOM 引起的 PowerShell 5.1 中文解码错误和连锁括号报错。恢复最初的 Cargo 与 `package.py --stage` 构建方式，所有程序和两种架构 TSF DLL 重新编译；打包增加实际 Windows PowerShell 5.1 校验及 DLL 名称、架构检查。此版保留此前外观、默认值、词库与译文修改。

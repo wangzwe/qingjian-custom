@@ -4,13 +4,16 @@
 import argparse
 import glob
 import hashlib
+import os
 from pathlib import Path
 import re
 import shutil
+import struct
+import subprocess
 import zipfile
 
 REPO = Path(__file__).resolve().parents[3]
-FOLDER = "Qingjian-custom3-portable4"
+FOLDER = "Qingjian-custom3-portable5"
 PORTABLE_DICTIONARIES = {
     "41448.dict.yaml",
     "8105.dict.yaml",
@@ -53,7 +56,7 @@ def stage(destination: Path, guide: Path, dictionaries: Path | None = None) -> P
                 shutil.copytree(item, dest)
             else:
                 shutil.copy2(item, dest)
-    (root / "qingjian-portable.txt").write_text("Qingjian custom3 portable4\n", encoding="utf-8")
+    (root / "qingjian-portable.txt").write_text("Qingjian custom3 portable5\n", encoding="utf-8")
     (root / "userdata").mkdir()
     (root / "userdata/README.txt").write_text(
         "配置、学习数据和自定义主题保存在此目录。\n"
@@ -96,9 +99,41 @@ def stage(destination: Path, guide: Path, dictionaries: Path | None = None) -> P
     return root
 
 
+def validate(root: Path) -> None:
+    """验证实际启动环境，不能用 PowerShell 7 的解析结果代替 5.1。"""
+    if not (root / "portable.ps1").read_bytes().startswith(b"\xef\xbb\xbf"):
+        raise RuntimeError("portable.ps1 必须带 UTF-8 BOM，否则 Windows PowerShell 5.1 会误读中文")
+    for action in ["Enable", "Disable", "Start", "Settings", "Status"]:
+        launcher = (root / f"{action}.cmd").read_text(encoding="ascii")
+        if "WindowsPowerShell\\v1.0\\powershell.exe" not in launcher or f"-Action {action}" not in launcher:
+            raise RuntimeError(f"启动入口不正确：{action}.cmd")
+    binaries = {
+        "qingjian-server.exe": 0x8664,
+        "qingjian-settings.exe": 0x8664,
+        "qingjian-settings-legacy.exe": 0x8664,
+        "qingjian_tsf-custom3-portable1.dll": 0x8664,
+        "qingjian_tsf-custom3-portable1-x86.dll": 0x014C,
+    }
+    for name, machine in binaries.items():
+        with (root / name).open("rb") as binary:
+            if binary.read(2) != b"MZ":
+                raise RuntimeError(f"无效的 Windows 二进制：{name}")
+            binary.seek(0x3C)
+            offset = struct.unpack("<I", binary.read(4))[0]
+            binary.seek(offset)
+            if binary.read(4) != b"PE\0\0" or struct.unpack("<H", binary.read(2))[0] != machine:
+                raise RuntimeError(f"二进制架构不正确：{name}")
+    powershell = Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"
+    subprocess.run([
+        str(powershell), "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+        "-File", str(Path(__file__).with_name("validate.ps1")), "-BundleRoot", str(root.resolve()),
+    ], check=True)
+
+
 def archive(root: Path, output: Path) -> None:
     if root.name != FOLDER or not (root / "qingjian-portable.txt").is_file():
         raise RuntimeError("不是本次便携包目录")
+    validate(root)
     # 不允许把试运行或个人迁移产生的数据发布出去。
     allowed_files = {"README.txt", "user-glossary-en.tsv", "README-个人英语译文.md"}
     dicts = root / "userdata/dicts"

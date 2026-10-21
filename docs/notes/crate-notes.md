@@ -3,7 +3,7 @@
 CLAUDE.md 只保留目录地图与规则，每个 crate / app / tool 的实现细节收在这里：入口类型、数据文件、常数、生成命令。
 改了实现要同步改这里；与代码冲突时以代码为准。
 
-Windows 解压版：`qingjian-platform/src/dirs/portable.rs` 仅在 Server／新旧设置程序旁存在 `qingjian-portable.txt` 时，把用户目录改为同级 `userdata`。按可执行文件目录识别并缓存，不依赖启动器环境变量，因此 TSF 自动拉起 Server 时也使用便携数据；DLL 的宿主程序不会触发识别。诊断日志仍在 `%LOCALAPPDATA%\Qingjian\logs`。`apps/windows/portable` 提供启停脚本与按 Inno 文件清单打 ZIP 的工具；注册仍需管理员，拒绝覆盖其他目录的 CLSID，停用不删除用户数据，不创建开机启动项。
+Windows 解压版：`qingjian-platform/src/dirs/portable.rs` 仅在 Server／新旧设置程序旁存在 `qingjian-portable.txt` 时，把用户目录改为同级 `userdata`。按可执行文件目录识别并缓存，不依赖启动器环境变量，因此 TSF 自动拉起 Server 时也使用便携数据；DLL 的宿主程序不会触发识别。诊断日志仍在 `%LOCALAPPDATA%\Qingjian\logs`。`apps/windows/portable` 提供启停脚本与按 Inno 文件清单打 ZIP 的工具；注册仍需管理员，拒绝覆盖其他目录的 CLSID，停用不删除用户数据，不创建开机启动项。便携入口由 Windows PowerShell 5.1 运行，打包必须将中文脚本写成 UTF-8 BOM；`package.py archive()` 强制检查编码、启动入口与 PE 架构，再用系统 5.1 执行 `validate.ps1` 做语法、只读载入和载荷检查，避免手工覆盖脚本后漏检。回归测试见 `apps/windows/portable/test_package.py`。
 
 Windows 候选外观扩展：`general.candidate_font` / `annotation_font`、`candidate_bold` / `annotation_bold`、两组 `*_color` / `*_highlight_color` 经 `RenderSettings` 热加载，在 `Theme::with_text_style` 里覆盖对应命名样式；颜色只作用于候选正文或译文，拼音、序号、状态条不受影响。设置预览随配置失效并加载相应系统字族。`candidate_gap = -1` 保留阴影避让，0–40 是按 DPI 缩放的内容边缘间距。
 

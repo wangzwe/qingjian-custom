@@ -3,7 +3,7 @@
 本仓库由 **wangzwe** 基于 [qingjian-team/qingjian](https://github.com/qingjian-team/qingjian) 修改，
 整体按 **GPL-3.0-or-later** 开源；非官方发行，修改日期 2026-10-21。
 
-**[下载便携版与对应源码](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable4)** ·
+**[下载便携版与对应源码](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable5)** ·
 [使用说明](docs/custom/portable.md) · [完整修改清单](docs/custom/requirements.md) ·
 [构建步骤](docs/custom/build.md) · [许可及来源声明](CUSTOM-NOTICE.md)
 
