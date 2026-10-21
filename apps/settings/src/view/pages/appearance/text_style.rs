@@ -11,6 +11,8 @@ pub(super) fn controls(
     ui: &mut Ui<Message>,
     page: &Page,
     enabled: bool,
+    style_enabled: bool,
+    colors_enabled: bool,
 ) -> Result<Vec<NodeId>, RenderError> {
     let g = &page.settings.config.general;
     let mut out = Vec::new();
@@ -76,25 +78,27 @@ pub(super) fn controls(
                 &[],
             ),
             180.0,
-            !enabled,
+            !style_enabled,
         )?;
         let rows = vec![
             SettingRow::new("字体")
                 .control(font)
                 .build(ui, &page.theme)?,
-            toggle_with(ui, page, "加粗", ("general", bold_key), bold, !enabled)?,
-            color(ui, page, normal, "文字颜色", enabled)?,
-            color(ui, page, selected, "选中时颜色", enabled)?,
+            toggle_with(ui, page, "加粗", ("general", bold_key), bold, !style_enabled)?,
+            color(ui, page, normal, "文字颜色", colors_enabled)?,
+            color(ui, page, selected, "选中时颜色", colors_enabled)?,
         ];
         out.push(section_title(ui, &page.theme, label)?);
         out.push(group(ui, &page.theme, &rows)?);
     }
-    let reset = Button::new("恢复主题文字样式").disabled(!enabled).build(
-        ui,
-        &page.theme,
-        "reset-text-style",
-        Message::ResetTextStyles,
-    )?;
+    let reset = Button::new("恢复主题文字样式")
+        .disabled(!style_enabled && !colors_enabled)
+        .build(
+            ui,
+            &page.theme,
+            "reset-text-style",
+            Message::ResetTextStyles,
+        )?;
     out.push(with_notice(
         ui,
         page,

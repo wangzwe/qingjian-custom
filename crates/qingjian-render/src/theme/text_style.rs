@@ -37,7 +37,13 @@ impl Theme {
     pub(crate) fn text_color(&self, role: &str, selected: bool, fallback: Color) -> Color {
         self.text_colors
             .get(role)
-            .and_then(|colors| if selected { colors.1 } else { colors.0 })
+            .and_then(|colors| {
+                if selected {
+                    colors.1.or(colors.0)
+                } else {
+                    colors.0
+                }
+            })
             .unwrap_or(fallback)
     }
 }

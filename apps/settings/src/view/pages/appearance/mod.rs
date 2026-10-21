@@ -89,7 +89,7 @@ pub fn appearance(ui: &mut Ui<Message>, page: &Page) -> Result<Vec<NodeId>, Rend
     let renderer = SettingRow::new("渲染引擎")
         .control(renderer)
         .build(ui, theme)?;
-    // 字体与字号只对青简渲染器生效
+    // 通用字体只对青简渲染器生效；Windows 的独立候选 / 译文字体、字重和字号也可由 GDI 使用。
     let own = general.renderer == CandidateRenderer::Qingjian;
     let font_name = if general.font.is_empty() {
         "系统字体"
@@ -98,15 +98,17 @@ pub fn appearance(ui: &mut Ui<Message>, page: &Page) -> Result<Vec<NodeId>, Rend
     };
     let font = select(ui, page, Popup::Font, (font_name, &[]), 180.0, !own)?;
     let font = SettingRow::new("字体").control(font).build(ui, theme)?;
-    let candidate = size(ui, page, SizeKind::Candidate, own)?;
+    let independent_style = Feature::IndependentTextStyle.here();
+    let size_enabled = own || independent_style;
+    let candidate = size(ui, page, SizeKind::Candidate, size_enabled)?;
     let candidate = SettingRow::new("候选字号")
         .control(candidate)
         .build(ui, theme)?;
-    let annotation = size(ui, page, SizeKind::Annotation, own)?;
+    let annotation = size(ui, page, SizeKind::Annotation, size_enabled)?;
     let customized =
         general.candidate_font_size.get().is_some() || general.annotation_font_size.get().is_some();
     let reset = Button::new("恢复主题字号")
-        .disabled(!own || !customized)
+        .disabled(!size_enabled || !customized)
         .build(ui, theme, "reset-sizes", Message::ResetSizes)?;
     let annotation = SettingRow::new("译文字号")
         .control(annotation)
@@ -115,8 +117,8 @@ pub fn appearance(ui: &mut Ui<Message>, page: &Page) -> Result<Vec<NodeId>, Rend
     out.push(section_title(ui, theme, "文字")?);
     out.push(group(ui, theme, &[renderer, font, candidate, annotation])?);
 
-    if Feature::IndependentTextStyle.here() {
-        out.extend(text_style::controls(ui, page, own)?);
+    if independent_style {
+        out.extend(text_style::controls(ui, page, own, true, true)?);
     }
 
     let animations = toggle(

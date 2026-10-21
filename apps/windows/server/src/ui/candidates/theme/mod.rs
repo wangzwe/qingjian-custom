@@ -7,12 +7,14 @@ use windows::Win32::Graphics::Gdi::{
     CLEARTYPE_QUALITY, CLIP_DEFAULT_PRECIS, CreateFontW, DEFAULT_CHARSET, DeleteObject,
     FF_DONTCARE, HFONT, OUT_TT_PRECIS, VARIABLE_PITCH,
 };
+use qingjian_platform::FontSize;
 use windows::core::{PCWSTR, w};
 
 use self::palette::Palette;
 
 /// 常规字重；windows crate 未导出。
 const FW_NORMAL: i32 = 400;
+const FW_BOLD: i32 = 700;
 
 /// COLORREF 低位到高位是 R、G、B。
 pub(super) const fn rgb(r: u8, g: u8, b: u8) -> COLORREF {
@@ -32,7 +34,11 @@ pub(crate) struct Theme {
 
     pub text_color: COLORREF,
 
+    pub highlight_text_color: COLORREF,
+
     pub gloss_color: COLORREF,
+
+    pub highlight_gloss_color: COLORREF,
 
     pub pos_color: COLORREF,
 
@@ -67,7 +73,7 @@ impl Theme {
     pub(crate) fn new(dpi: u32, dark: bool) -> Self {
         let scale = |px: i32| (px * dpi as i32) / 96;
         // 负高度 = 字符高度（不含内部行距）。
-        let font = |px: i32| create_font(-scale(px), w!("Microsoft YaHei UI"));
+        let font = |px: i32| create_font(-scale(px), w!("Microsoft YaHei UI"), false);
         let palette = if dark {
             Palette::dark()
         } else {
@@ -77,9 +83,11 @@ impl Theme {
             text_font: font(16),
             annotation_font: font(12),
             index_font: font(11),
-            symbol_font: create_font(-scale(15), w!("Segoe UI Symbol")),
+            symbol_font: create_font(-scale(15), w!("Segoe UI Symbol"), false),
             text_color: palette.text_color,
+            highlight_text_color: palette.text_color,
             gloss_color: palette.gloss_color,
+            highlight_gloss_color: palette.gloss_color,
             pos_color: palette.pos_color,
             fresh_color: palette.fresh_color,
             index_color: palette.index_color,
@@ -92,6 +100,50 @@ impl Theme {
             corner_radius: scale(8),
         }
     }
+    /// GDI 也应用独立的候选 / 译文字体、字重、字号与颜色。
+    pub(crate) fn with_text_styles(
+        dpi: u32,
+        dark: bool,
+        styles: &[(String, bool, String, String); 2],
+        sizes: (FontSize, FontSize),
+    ) -> Self {
+        let mut theme = Self::new(dpi, dark);
+        unsafe {
+            let _ = DeleteObject(theme.text_font.into());
+            let _ = DeleteObject(theme.annotation_font.into());
+        }
+        let candidate_size = font_height(dpi, sizes.0, 16);
+        let annotation_size = font_height(dpi, sizes.1, 12);
+        theme.text_font = create_font_family(-candidate_size, &styles[0].0, styles[0].1);
+        theme.annotation_font = create_font_family(-annotation_size, &styles[1].0, styles[1].1);
+        let candidate = parse_color(&styles[0].2);
+        let annotation = parse_color(&styles[1].2);
+        theme.text_color = candidate.unwrap_or(theme.text_color);
+        theme.highlight_text_color = parse_color(&styles[0].3)
+            .or(candidate)
+            .unwrap_or(theme.text_color);
+        theme.gloss_color = annotation.unwrap_or(theme.gloss_color);
+        theme.highlight_gloss_color = parse_color(&styles[1].3)
+            .or(annotation)
+            .unwrap_or(theme.gloss_color);
+        theme
+    }
+}
+
+fn font_height(dpi: u32, size: FontSize, default_px: i32) -> i32 {
+    size.get().map_or_else(
+        || (default_px * dpi as i32) / 96,
+        |points| (points.clamp(6.0, 72.0) * dpi as f32 / 72.0).round() as i32,
+    )
+}
+
+fn parse_color(value: &str) -> Option<COLORREF> {
+    let hex = value.strip_prefix('#')?;
+    if hex.len() != 6 {
+        return None;
+    }
+    let value = u32::from_str_radix(hex, 16).ok()?;
+    Some(rgb((value >> 16) as u8, (value >> 8) as u8, value as u8))
 }
 
 impl Drop for Theme {
@@ -110,14 +162,29 @@ impl Drop for Theme {
 }
 
 /// 缺字由 GDI 字体链回落。`height` 为负的字符高度。
-fn create_font(height: i32, face: PCWSTR) -> HFONT {
+fn create_font(height: i32, face: PCWSTR, bold: bool) -> HFONT {
+    create_font_with_weight(height, face, bold)
+}
+
+fn create_font_family(height: i32, family: &str, bold: bool) -> HFONT {
+    let family = if family.trim().is_empty() {
+        "Microsoft YaHei UI"
+    } else {
+        family.trim()
+    };
+    let mut face: Vec<u16> = family.encode_utf16().collect();
+    face.push(0);
+    create_font_with_weight(height, PCWSTR(face.as_ptr()), bold)
+}
+
+fn create_font_with_weight(height: i32, face: PCWSTR, bold: bool) -> HFONT {
     unsafe {
         CreateFontW(
             height,
             0,
             0,
             0,
-            FW_NORMAL,
+            if bold { FW_BOLD } else { FW_NORMAL },
             0,
             0,
             0,

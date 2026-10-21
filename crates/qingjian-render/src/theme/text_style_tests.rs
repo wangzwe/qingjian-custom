@@ -29,13 +29,33 @@ fn independent_text_style_preserves_other_roles_and_theme() {
         custom.text_color("candidate", true, fallback),
         Color::rgb(0xab, 0xcd, 0xef)
     );
-    assert_eq!(custom.text_color("annotation", true, fallback), fallback);
+    assert_eq!(
+        custom.text_color("annotation", true, fallback),
+        Color::rgb(0x65, 0x43, 0x21)
+    );
     assert_eq!(base.text_color("candidate", false, fallback), fallback);
     assert_eq!(
         custom
             .with_dark(true)
             .text_color("candidate", false, fallback),
         Color::rgb(0x12, 0x34, 0x56)
+    );
+}
+
+#[test]
+fn selected_text_uses_explicit_highlight_color_or_keeps_custom_base_color() {
+    let fallback = Color::rgb(0, 0, 0);
+    let same_color = Theme::light().with_text_style("annotation", "", false, ("#123456", ""));
+    assert_eq!(
+        same_color.text_color("annotation", true, fallback),
+        Color::rgb(0x12, 0x34, 0x56)
+    );
+
+    let separate_colors =
+        Theme::light().with_text_style("annotation", "", false, ("#123456", "#abcdef"));
+    assert_eq!(
+        separate_colors.text_color("annotation", true, fallback),
+        Color::rgb(0xab, 0xcd, 0xef)
     );
 }
 

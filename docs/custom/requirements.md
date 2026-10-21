@@ -87,7 +87,7 @@
 
 ## 3. 设置入口与配置项
 
-打开 **青简设置 → 外观**，选择「青简渲染器」。以下 px 数值均按显示缩放换算，不等同于所有显示器上的物理像素数。
+打开 **青简设置 → 外观**。Windows 的青简渲染器与系统绘制都支持候选字、译文字的独立字体、加粗、字号及颜色；窗口排布和留白项仍按各自控件的可用状态生效。以下 px 数值均按显示缩放换算，不等同于所有显示器上的物理像素数。
 
 ### 3.1 字体与文字颜色
 
@@ -95,10 +95,10 @@
 |---|---|---|
 | 候选文字 → 字体 | `candidate_font` | 空值沿用主题／基础字体；未安装的字体会回退 |
 | 译文文字 → 字体 | `annotation_font` | 同上，与候选字体独立 |
-| 候选字号 / 译文字号 | `candidate_font_size` / `annotation_font_size` | 0 跟随主题；这是原有控制 |
+| 候选字号 / 译文字号 | `candidate_font_size` / `annotation_font_size` | 0 使用当前绘制引擎默认字号；这是原有控制 |
 | 候选文字 / 译文文字 → 加粗 | `candidate_bold` / `annotation_bold` | 默认 false；开启使用 700 字重，关闭沿用主题原字重 |
-| 候选文字 → 文字颜色 / 选中时颜色 | `candidate_color` / `candidate_highlight_color` | `#RRGGBB`；空值跟随主题 |
-| 译文文字 → 文字颜色 / 选中时颜色 | `annotation_color` / `annotation_highlight_color` | `#RRGGBB`；空值跟随主题 |
+| 候选文字 → 文字颜色 / 选中时颜色 | `candidate_color` / `candidate_highlight_color` | `#RRGGBB`；选中颜色留空时沿用自定义文字颜色；两项都空则跟随主题 |
+| 译文文字 → 文字颜色 / 选中时颜色 | `annotation_color` / `annotation_highlight_color` | `#RRGGBB`；选中颜色留空时沿用自定义文字颜色；两项都空则跟随主题 |
 
 「恢复主题文字样式」清除两组字体、加粗、颜色覆盖及字号设置，不重置背景、边距等其他设置。
 

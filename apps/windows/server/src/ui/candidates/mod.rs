@@ -24,7 +24,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
 };
 use windows::core::{Error, PCWSTR, Result, w};
 
-use qingjian_platform::Appearance;
+use qingjian_platform::{Appearance, FontSize};
 use qingjian_platform::protocol::Frame;
 use qingjian_render::Mode;
 
@@ -86,6 +86,10 @@ pub(crate) struct CandidateWindow {
 
     reversed: Cell<bool>,
 
+    text_styles: RefCell<[(String, bool, String, String); 2]>,
+
+    font_sizes: Cell<(FontSize, FontSize)>,
+
     gap: Cell<i32>,
 
     shadow: Cell<bool>,
@@ -131,6 +135,11 @@ impl CandidateWindow {
             painter,
             position: Cell::new((0, 0)),
             reversed: Cell::new(false),
+            text_styles: RefCell::new([
+                (String::new(), false, String::new(), String::new()),
+                (String::new(), false, String::new(), String::new()),
+            ]),
+            font_sizes: Cell::new((FontSize::default(), FontSize::default())),
             gap: Cell::new(-1),
             shadow: Cell::new(false),
         })
@@ -139,6 +148,21 @@ impl CandidateWindow {
     pub(crate) fn configure_gap(&self, gap: i32, shadow: bool) {
         self.gap.set(gap.clamp(-1, 40));
         self.shadow.set(shadow);
+    }
+
+    pub(crate) fn configure_text_styles(
+        &self,
+        text_styles: &[(String, bool, String, String); 2],
+        font_sizes: (FontSize, FontSize),
+    ) {
+        self.text_styles.replace(text_styles.clone());
+        self.font_sizes.set(font_sizes);
+        self.data.borrow_mut().theme = Rc::new(Theme::with_text_styles(
+            self.dpi.get(),
+            self.dark.get(),
+            &self.text_styles.borrow(),
+            self.font_sizes.get(),
+        ));
     }
 
     fn place(&self, anchor: RECT, content: (i32, i32), overhang: (i32, i32)) -> (i32, i32) {
@@ -333,7 +357,12 @@ impl CandidateWindow {
         self.log_dpi(caret, window_dpi, monitor_dpi, dpi);
         let dark = resolve_dark(self.data.borrow().appearance);
         if dpi != self.dpi.get() || dark != self.dark.get() {
-            self.data.borrow_mut().theme = Rc::new(Theme::new(dpi, dark));
+            self.data.borrow_mut().theme = Rc::new(Theme::with_text_styles(
+                dpi,
+                dark,
+                &self.text_styles.borrow(),
+                self.font_sizes.get(),
+            ));
             self.dpi.set(dpi);
             self.dark.set(dark);
         }

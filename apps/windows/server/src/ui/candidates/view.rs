@@ -274,13 +274,14 @@ fn draw_rows(hdc: HDC, data: &RenderData, mut y: i32, width: i32) {
             baseline + small_offset,
             &row.index,
         );
-        draw_word(hdc, theme, row, text_x, baseline, small_offset);
+        let selected = i == data.highlight;
+        draw_word(hdc, theme, row, text_x, baseline, small_offset, selected);
         let mut x = annotation_x;
         for (segment, tone) in &row.annotation {
             x += draw_text(
                 hdc,
                 theme.annotation_font,
-                tone_color(theme, *tone),
+                tone_color(theme, *tone, selected),
                 x,
                 baseline + small_offset,
                 segment,
@@ -352,6 +353,7 @@ fn draw_horizontal(hdc: HDC, data: &RenderData, y: i32, width: i32) {
             x + index_width + index_gap,
             baseline,
             small_offset,
+            i == data.highlight,
         );
         x += item_width + theme.column_gap;
     }
@@ -374,7 +376,7 @@ fn draw_horizontal(hdc: HDC, data: &RenderData, y: i32, width: i32) {
             x += draw_text(
                 hdc,
                 theme.annotation_font,
-                tone_color(theme, *tone),
+                tone_color(theme, *tone, true),
                 x,
                 top,
                 segment,
@@ -478,6 +480,7 @@ fn draw_matrix(hdc: HDC, data: &RenderData, y: i32, width: i32) {
             x + cells.index_width + index_gap,
             baseline,
             small_offset,
+            i == data.highlight,
         );
     }
     // 信息行：页码靠右；左边先放被截断的高亮候选的完整文本，再放译文，放不下的截断
@@ -507,7 +510,15 @@ fn draw_matrix(hdc: HDC, data: &RenderData, y: i32, width: i32) {
         return;
     };
     if cells.texts[data.highlight].1 {
-        let used = draw_clipped(hdc, theme, &row.text, theme.text_color, x, info_top, budget);
+        let used = draw_clipped(
+            hdc,
+            theme,
+            &row.text,
+            theme.highlight_text_color,
+            x,
+            info_top,
+            budget,
+        );
         x += used + info_gap;
         budget -= used + info_gap;
     }
@@ -519,7 +530,7 @@ fn draw_matrix(hdc: HDC, data: &RenderData, y: i32, width: i32) {
             hdc,
             theme,
             segment,
-            tone_color(theme, *tone),
+            tone_color(theme, *tone, true),
             x,
             info_top,
             budget,
@@ -695,7 +706,15 @@ fn code_width(hdc: HDC, theme: &Theme, row: &Row) -> i32 {
 }
 
 /// 画候选词本体，云端词前带小云朵、后面紧跟辅码。返回占用宽度。
-fn draw_word(hdc: HDC, theme: &Theme, row: &Row, x: i32, baseline: i32, small_offset: i32) -> i32 {
+fn draw_word(
+    hdc: HDC,
+    theme: &Theme,
+    row: &Row,
+    x: i32,
+    baseline: i32,
+    small_offset: i32,
+    selected: bool,
+) -> i32 {
     let prefix = cloud_prefix_width(hdc, theme, row);
     let color = if row.cloud {
         draw_text(
@@ -707,6 +726,8 @@ fn draw_word(hdc: HDC, theme: &Theme, row: &Row, x: i32, baseline: i32, small_of
             CLOUD_GLYPH,
         );
         theme.cloud_color
+    } else if selected {
+        theme.highlight_text_color
     } else {
         theme.text_color
     };
@@ -716,7 +737,7 @@ fn draw_word(hdc: HDC, theme: &Theme, row: &Row, x: i32, baseline: i32, small_of
         width += draw_text(
             hdc,
             theme.annotation_font,
-            tone_color(theme, Tone::Code),
+            tone_color(theme, Tone::Code, selected),
             x + width,
             baseline + small_offset,
             code,
@@ -725,11 +746,13 @@ fn draw_word(hdc: HDC, theme: &Theme, row: &Row, x: i32, baseline: i32, small_of
     width
 }
 
-fn tone_color(theme: &Theme, tone: Tone) -> COLORREF {
+fn tone_color(theme: &Theme, tone: Tone, selected: bool) -> COLORREF {
     match tone {
+        Tone::Gloss if selected => theme.highlight_gloss_color,
         Tone::Gloss => theme.gloss_color,
         Tone::Fresh => theme.fresh_color,
         Tone::Faint | Tone::Pos | Tone::Separator => theme.pos_color,
+        Tone::Code if selected => theme.highlight_gloss_color,
         Tone::Code => theme.gloss_color,
     }
 }

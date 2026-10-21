@@ -167,6 +167,15 @@ impl<'a> Context<'a> {
         }
     }
 
+    /// `highlighted.annotation` 已指向高亮候选；普通 `annotation` 需要看当前行。
+    pub(super) fn annotation_selected(&self, name: &str) -> bool {
+        match name {
+            "annotation" => self.holds("highlighted"),
+            "highlighted.annotation" => true,
+            _ => false,
+        }
+    }
+
     /// 列表绑定。
     pub(super) fn list(&self, name: &str) -> Option<&'a [Row]> {
         (name == "candidates").then_some(self.frame.rows.as_slice())
@@ -180,7 +189,7 @@ impl<'a> Context<'a> {
 #[cfg(test)]
 mod tests {
     use super::Context;
-    use crate::frame::{Frame, Mode};
+    use crate::frame::{Frame, Mode, Row};
 
     #[test]
     fn mode_conditions_and_scheme_binding() {
@@ -199,5 +208,25 @@ mod tests {
         assert!(ctx.holds("mode.scheme") && !Context::new(&Frame::default()).holds("mode.scheme"));
         assert_eq!(ctx.text("mode.scheme"), Some("小鹤双拼"));
         assert_eq!(Context::new(&Frame::default()).text("mode.scheme"), None);
+    }
+
+    #[test]
+    fn highlighted_annotation_binding_is_selected_even_outside_a_row() {
+        let frame = Frame {
+            rows: vec![Row::plain(0, "你好"), Row::plain(1, "您好")],
+            highlighted: Some(1),
+            ..Frame::default()
+        };
+        let other_row = Context::new(&frame).with_row(&frame.rows[0], 0, 2);
+        assert!(!other_row.annotation_selected("annotation"));
+        assert!(other_row.annotation_selected("highlighted.annotation"));
+
+        let selected_row = Context::new(&frame).with_row(&frame.rows[1], 1, 2);
+        assert!(selected_row.annotation_selected("annotation"));
+        assert!(
+            Context::new(&frame)
+                .in_matrix()
+                .annotation_selected("highlighted.annotation")
+        );
     }
 }
