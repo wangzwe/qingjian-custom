@@ -40,6 +40,18 @@ pub(crate) struct Theme {
 
     pub highlight_gloss_color: COLORREF,
 
+    pub text_overrides: [Option<COLORREF>; 2],
+
+    pub annotation_overrides: [Option<COLORREF>; 2],
+
+    pub highlight_pos_color: COLORREF,
+
+    pub highlight_fresh_color: COLORREF,
+
+    pub highlight_cloud_color: COLORREF,
+
+    pub highlight_index_color: COLORREF,
+
     pub pos_color: COLORREF,
 
     /// 生词译文，比普通译文醒目。
@@ -95,6 +107,12 @@ impl Theme {
             highlight_text_color: palette.text_color,
             gloss_color: palette.gloss_color,
             highlight_gloss_color: palette.gloss_color,
+            text_overrides: [None; 2],
+            annotation_overrides: [None; 2],
+            highlight_pos_color: palette.pos_color,
+            highlight_fresh_color: palette.fresh_color,
+            highlight_cloud_color: palette.cloud_color,
+            highlight_index_color: palette.index_color,
             pos_color: palette.pos_color,
             fresh_color: palette.fresh_color,
             index_color: palette.index_color,
@@ -112,12 +130,12 @@ impl Theme {
     }
     /// GDI 也应用独立的候选 / 译文字体、字重、字号与颜色。
     pub(crate) fn with_text_styles(
+        mut self,
         dpi: u32,
-        dark: bool,
         styles: &[(String, bool, String, String); 2],
         sizes: (FontSize, FontSize),
     ) -> Self {
-        let mut theme = Self::new(dpi, dark);
+        let theme = &mut self;
         unsafe {
             let _ = DeleteObject(theme.text_font.into());
             let _ = DeleteObject(theme.annotation_font.into());
@@ -128,23 +146,46 @@ impl Theme {
         theme.annotation_font = create_font_family(-annotation_size, &styles[1].0, styles[1].1);
         let candidate = parse_color(&styles[0].2);
         let annotation = parse_color(&styles[1].2);
+        theme.text_overrides = [candidate, parse_color(&styles[0].3).or(candidate)];
+        theme.annotation_overrides = [annotation, parse_color(&styles[1].3).or(annotation)];
         theme.text_color = candidate.unwrap_or(theme.text_color);
         theme.highlight_text_color = parse_color(&styles[0].3)
             .or(candidate)
-            .unwrap_or(theme.text_color);
+            .unwrap_or(theme.highlight_text_color);
         theme.gloss_color = annotation.unwrap_or(theme.gloss_color);
         theme.highlight_gloss_color = parse_color(&styles[1].3)
             .or(annotation)
-            .unwrap_or(theme.gloss_color);
-        theme
+            .unwrap_or(theme.highlight_gloss_color);
+        self
+    }
+
+    /// GDI 不支持 alpha，语义色分别预混到普通背景和选中背景。
+    pub(crate) fn with_palette(mut self, source: &qingjian_render::Theme) -> Self {
+        let color = |name, background, fallback| {
+            source
+                .palette_color(name)
+                .map_or(fallback, |color| blend(color, background))
+        };
+        self.highlight = color("accent", self.background, self.highlight);
+        self.text_color = color("text", self.background, self.text_color);
+        self.gloss_color = color("gloss", self.background, self.gloss_color);
+        self.pos_color = color("faint", self.background, self.pos_color);
+        self.index_color = self.pos_color;
+        self.fresh_color = color("fresh", self.background, self.fresh_color);
+        self.cloud_color = color("cloud", self.background, self.cloud_color);
+        self.highlight_text_color = color("hl_text", self.highlight, self.text_color);
+        self.highlight_gloss_color = color("hl_gloss", self.highlight, self.gloss_color);
+        self.highlight_pos_color = color("hl_faint", self.highlight, self.pos_color);
+        self.highlight_index_color = self.highlight_pos_color;
+        self.highlight_fresh_color = color("hl_fresh", self.highlight, self.fresh_color);
+        self.highlight_cloud_color = color("hl_cloud", self.highlight, self.cloud_color);
+        self
     }
 
     pub(crate) fn with_candidate_box(
         mut self,
         background: &str,
-        padding: i32,
-        row_padding: i32,
-        row_gap: i32,
+        (padding, row_padding, row_gap): (i32, i32, i32),
         annotation_table: bool,
         annotation_gap: i32,
         dpi: u32,
@@ -164,6 +205,19 @@ impl Theme {
         self.annotation_gap = scale(annotation_gap.clamp(0, 64));
         self
     }
+}
+
+fn blend(color: qingjian_render::Color, background: COLORREF) -> COLORREF {
+    let alpha = u32::from(color.a);
+    let channel = |value: u8, shift: u32| {
+        ((u32::from(value) * alpha + ((background.0 >> shift) & 255) * (255 - alpha) + 127) / 255)
+            as u8
+    };
+    rgb(
+        channel(color.r, 0),
+        channel(color.g, 8),
+        channel(color.b, 16),
+    )
 }
 
 fn font_height(dpi: u32, size: FontSize, default_px: i32) -> i32 {

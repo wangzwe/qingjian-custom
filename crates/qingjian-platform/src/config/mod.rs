@@ -256,9 +256,12 @@ horizontal_grid = false
 renderer = "qingjian"
 # 候选窗口字体（字族名，如 "LXGW WenKai"）；空为系统字体。只对青简渲染器生效，没装这个字体时自动回到系统字体
 font = ""
-# 候选字、译文的字号（点），盖过主题；0 用主题的。只对青简渲染器生效
+# 候选字、译文的字号（点），盖过主题；0 用主题的。Windows 系统绘制也生效
 candidate_font_size = 16
 annotation_font_size = 16
+# 独立候选 / 译文字体，Windows 两种渲染引擎均生效
+candidate_font = "Microsoft YaHei"
+annotation_font = "Microsoft YaHei"
 # 候选窗口的过渡动画（高亮滑动、主题里的循环动画）；false 时直接跳到位，与系统「减弱动态效果」一样
 animations = true
 # 组句中的拼音显示在哪：both 行内和候选窗口 / inline 只在行内 / window 只在候选窗口（应用里不放 marked text）

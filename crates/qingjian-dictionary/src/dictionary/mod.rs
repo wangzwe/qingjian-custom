@@ -196,13 +196,41 @@ impl Dictionary {
         }
     }
 
-    /// 按文件内容选加载方式：`.qj` 容器直接映射，否则当 TSV 解析。
+    /// 统一加载入口：`.qj` 容器直接映射，Rime YAML 转换后解析，其余按 TSV 解析。
     pub fn from_path(path: impl AsRef<Path>) -> Result<Self, DictionaryError> {
         let path = path.as_ref();
         if Container::is_qj(path) {
             Self::open_qj(path)
         } else {
-            Self::parse(&std::fs::read_to_string(path)?)
+            let text = std::fs::read_to_string(path)?;
+            let text = text.trim_start_matches('\u{feff}');
+            let yaml = path
+                .extension()
+                .and_then(|ext| ext.to_str())
+                .is_some_and(|ext| {
+                    ext.eq_ignore_ascii_case("yaml") || ext.eq_ignore_ascii_case("yml")
+                });
+            if yaml || crate::import::looks_like_rime(text) {
+                let parsed = crate::import::to_tsv(text);
+                let mut dictionary = Self::parse(&parsed.tsv)?;
+                if dictionary.is_empty() {
+                    return Err(DictionaryError::Corrupt(
+                        "no usable Rime dictionary entries",
+                    ));
+                }
+                dictionary.metadata = Some(Metadata {
+                    name: parsed.name.unwrap_or_else(|| {
+                        path.file_stem()
+                            .unwrap_or_default()
+                            .to_string_lossy()
+                            .into_owned()
+                    }),
+                    ..Metadata::default()
+                });
+                Ok(dictionary)
+            } else {
+                Self::parse(text)
+            }
         }
     }
 

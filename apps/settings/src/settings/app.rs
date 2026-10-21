@@ -197,8 +197,6 @@ impl App for Settings {
             }
             Message::ResetTextStyles => {
                 for key in [
-                    "candidate_font",
-                    "annotation_font",
                     "candidate_color",
                     "annotation_color",
                     "candidate_highlight_color",
@@ -206,11 +204,14 @@ impl App for Settings {
                 ] {
                     self.write("general", key, "");
                 }
+                for key in ["candidate_font", "annotation_font"] {
+                    self.write("general", key, "Microsoft YaHei");
+                }
                 for key in ["candidate_bold", "annotation_bold"] {
                     self.write("general", key, false);
                 }
-                self.write("general", "candidate_font_size", 0.0);
-                self.write("general", "annotation_font_size", 0.0);
+                self.write("general", "candidate_font_size", 16.0);
+                self.write("general", "annotation_font_size", 16.0);
                 for id in FieldId::ALL {
                     self.reset_field(id);
                 }

@@ -27,8 +27,8 @@ candidate_gap = 0
     assert_eq!(toml::from_str::<Config>(&saved).unwrap(), config);
     let old: Config = toml::from_str("[general]\nfont = 'SimSun'\n").unwrap();
     assert_eq!(old.general.font, "SimSun");
-    assert!(old.general.candidate_font.is_empty());
-    assert!(old.general.annotation_font.is_empty());
+    assert_eq!(old.general.candidate_font, "Microsoft YaHei");
+    assert_eq!(old.general.annotation_font, "Microsoft YaHei");
     assert!(!old.general.candidate_bold);
     assert_eq!(old.general.candidate_gap, 0);
 }

@@ -482,6 +482,14 @@ impl Theme {
         &self.file
     }
 
+    /// 系统原生绘制复用主题语义色，保持选中底色和文字配色一致。
+    pub fn palette_color(&self, name: &str) -> Option<Color> {
+        self.file
+            .variables
+            .get(name)
+            .map(|value| value.get(self.dark).0)
+    }
+
     /// 颜色引用按当前外观取值；变量不存在时透明。
     pub(crate) fn color(&self, color: &ColorRef) -> Color {
         match color {

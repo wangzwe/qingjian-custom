@@ -3,10 +3,14 @@
 //! 配色 / 字体在 [`theme`]。绘制内容在 [`RenderData`]，一行的展示形态在 [`row`]。设计语言对齐 macOS 端。
 
 mod click;
+mod colors;
+mod drawing;
 #[cfg(test)]
 mod placement_tests;
 mod render_data;
 pub(crate) mod row;
+#[cfg(test)]
+mod tests;
 pub(crate) mod theme;
 pub(crate) mod view;
 
@@ -161,20 +165,25 @@ impl CandidateWindow {
     }
 
     fn build_theme(&self, dpi: u32, dark: bool) -> Theme {
-        let mut theme =
-            Theme::with_text_styles(dpi, dark, &self.text_styles.borrow(), self.font_sizes.get());
+        let mut theme = Theme::new(dpi, dark);
         if let Some(settings) = self.render_settings.borrow().as_ref() {
             theme = theme.with_candidate_box(
                 &settings.candidate_background,
-                settings.candidate_padding,
-                settings.candidate_row_padding,
-                settings.candidate_row_gap,
+                (
+                    settings.candidate_padding,
+                    settings.candidate_row_padding,
+                    settings.candidate_row_gap,
+                ),
                 settings.annotation_table,
                 settings.annotation_gap,
                 dpi,
             );
+            let themes = qingjian_render::ThemeLibrary::load(
+                qingjian_platform::dirs::themes_dir().as_deref(),
+            );
+            theme = theme.with_palette(&themes.resolve(&settings.theme, dark));
         }
-        theme
+        theme.with_text_styles(dpi, &self.text_styles.borrow(), self.font_sizes.get())
     }
 
     fn place(&self, anchor: RECT, content: (i32, i32), overhang: (i32, i32)) -> (i32, i32) {

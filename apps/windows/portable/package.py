@@ -13,7 +13,7 @@ import subprocess
 import zipfile
 
 REPO = Path(__file__).resolve().parents[3]
-FOLDER = "Qingjian-custom3-portable5"
+FOLDER = "Qingjian-custom3-portable6"
 PORTABLE_DICTIONARIES = {
     "41448.dict.yaml",
     "8105.dict.yaml",
@@ -56,7 +56,7 @@ def stage(destination: Path, guide: Path, dictionaries: Path | None = None) -> P
                 shutil.copytree(item, dest)
             else:
                 shutil.copy2(item, dest)
-    (root / "qingjian-portable.txt").write_text("Qingjian custom3 portable5\n", encoding="utf-8")
+    (root / "qingjian-portable.txt").write_text("Qingjian custom3 portable6\n", encoding="utf-8")
     (root / "userdata").mkdir()
     (root / "userdata/README.txt").write_text(
         "配置、学习数据和自定义主题保存在此目录。\n"
@@ -128,6 +128,13 @@ def validate(root: Path) -> None:
         str(powershell), "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
         "-File", str(Path(__file__).with_name("validate.ps1")), "-BundleRoot", str(root.resolve()),
     ], check=True)
+
+    dicts = root / "userdata/dicts"
+    if dicts.is_dir():
+        audit = REPO / "target/release/examples/audit.exe"
+        if not audit.is_file():
+            raise RuntimeError("请先构建词库检查程序：cargo build --release -p qingjian-dictionary --example audit")
+        subprocess.run([str(audit), str(dicts.resolve())], check=True)
 
 
 def archive(root: Path, output: Path) -> None:

@@ -3,6 +3,8 @@
 
 mod entry;
 mod kind;
+#[cfg(test)]
+mod tests;
 
 pub use entry::Entry;
 pub use kind::Kind;

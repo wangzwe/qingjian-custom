@@ -6,7 +6,7 @@
 
 源码仓库：[qingjian-team/qingjian](https://github.com/qingjian-team/qingjian)。基准提交：`c97ff2b61933d6fcd845ee4f4f470faf3ea83bf6`。
 
-当前解压便携版为 **custom3-portable5**，包含 9 份外部词库、万象与数学词库、英语译文，以及系统绘制下完整候选框和译文外观设置，使用方式见第 9 节。
+当前解压便携版为 **custom3-portable6**，包含 9 份外部词库、万象与数学词库、英语译文，以及系统绘制下完整候选框和译文外观设置，使用方式见第 9 节。
 
 ## 1. 需求与修改清单
 
@@ -154,9 +154,9 @@ translation_pos = true
 
 第五版包含此前默认外观配置、系统绘制下的完整设置支持及便携词库导入，并修复入口脚本编码；无需依次安装旧版：
 
-- [第五版 Windows 便携包](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable5)。
-- [第五版累计源码补丁](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable5)。
-- [第五版 SHA-256 校验文件](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable5)。
+- [第六版 Windows 便携包](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable6)。
+- [第六版累计源码补丁](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable6)。
+- [第六版 SHA-256 校验文件](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable6)。
 
 安装器版本为 `0.2.2-dev-c97ff2b-custom3`。程序「关于」可能仍显示源码基础开发版本号，可通过新增的「译文排布」设置区辨认第三版。
 
@@ -164,11 +164,11 @@ translation_pos = true
 
 ### 补丁应用方法
 
-第五版补丁包含此前全部定制，应应用到上述基准提交的干净源码上，不要再叠加到已有定制的目录中。本次工作目录已经完成修改，不需要重复应用。
+第六版补丁包含此前全部定制，应应用到上述基准提交的干净源码上，不要再叠加到已有定制的目录中。本次工作目录已经完成修改，不需要重复应用。
 
 ```powershell
-git apply --check C:\path\to\qingjian-customization-portable5.patch
-git apply C:\path\to\qingjian-customization-portable5.patch
+git apply --check C:\path\to\qingjian-customization-portable6.patch
+git apply C:\path\to\qingjian-customization-portable6.patch
 ```
 
 ## 5. GitHub Issue 跟踪
@@ -255,3 +255,7 @@ Windows TSF 输入法仍需注册。首次运行 `Enable.cmd` 会请求管理员
 ## portable5 构建审计补充
 
 修复 portable4 手工打包遗漏 UTF-8 BOM 引起的 PowerShell 5.1 中文解码错误和连锁括号报错。恢复最初的 Cargo 与 `package.py --stage` 构建方式，所有程序和两种架构 TSF DLL 重新编译；打包增加实际 Windows PowerShell 5.1 校验及 DLL 名称、架构检查。此版保留此前外观、默认值、词库与译文修改。
+
+## portable6 功能审计补充
+
+修复系统绘制仍使用固定浅蓝选中背景的问题，改为读取所选主题的强调色及对应选中文字颜色；独立颜色设置覆盖所有候选和译文语义类型。统一新旧设置页与服务端的 Rime YAML 加载器，修复六份词库误报损坏，并逐份检查实际可用条数。候选和译文默认字体均为微软雅黑，恢复文字样式时还原为微软雅黑 16 号。交付标签为 `custom3-portable6`。

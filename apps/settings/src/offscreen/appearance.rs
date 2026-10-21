@@ -71,8 +71,10 @@ fn appearance_controls_save_validate_and_reset_without_losing_other_settings() {
     );
     settings.update(Message::ResetTextStyles);
     let saved = Config::load(&path).unwrap();
-    assert!(saved.general.candidate_font.is_empty());
-    assert!(saved.general.annotation_font.is_empty());
+    assert_eq!(saved.general.candidate_font, "Microsoft YaHei");
+    assert_eq!(saved.general.annotation_font, "Microsoft YaHei");
+    assert_eq!(saved.general.candidate_font_size.get(), Some(16.0));
+    assert_eq!(saved.general.annotation_font_size.get(), Some(16.0));
     assert!(!saved.general.candidate_bold);
     assert!(saved.general.annotation_color.is_empty());
     assert_eq!(saved.general.learning_language, "ja");

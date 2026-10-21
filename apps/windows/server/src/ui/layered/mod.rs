@@ -2,7 +2,7 @@
 //! `UpdateLayeredWindow` 一次贴上。候选窗口与状态条共用。位图在 [`Canvas`]，内容圆角矩形在 [`RoundRect`]。
 //! 青简渲染器画好的整张位图（已含阴影）走 [`present`]，只做 RGBA → BGRA 再贴。
 
-mod canvas;
+pub(in crate::ui) mod canvas;
 mod round_rect;
 
 use qingjian_render::Pixmap;

@@ -108,7 +108,7 @@ pub(super) fn controls(
         out.push(section_title(ui, &page.theme, label)?);
         out.push(group(ui, &page.theme, &rows)?);
     }
-    let reset = Button::new("恢复主题文字样式")
+    let reset = Button::new("恢复默认文字样式")
         .disabled(!style_enabled && !colors_enabled)
         .build(
             ui,

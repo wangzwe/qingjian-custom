@@ -2,6 +2,28 @@ use super::*;
 
 const SAMPLE: &str = "# 测试词库\n开发\tkai fa\t9000\n开发者\tkai fa zhe\t3000\n开饭\tkai fan\t800\n开放\tkai fang\t2000\n咖啡\tka fei\t5000\n开\tkai\t20000\n";
 
+#[test]
+fn from_path_reads_rime_header_and_rejects_empty_yaml() {
+    let dir = std::env::temp_dir().join(format!("qingjian-rime-reader-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("sample.dict.yaml");
+    std::fs::write(
+        &path,
+        "\u{feff}# Rime\n---\nname: 数学\nversion: 1\n...\n哈达玛积\tha da ma ji\t30\n",
+    )
+    .unwrap();
+    let dictionary = Dictionary::from_path(&path).unwrap();
+    assert_eq!(dictionary.metadata().unwrap().name, "数学");
+    assert_eq!(
+        dictionary.lookup(&["ha", "da", "ma", "ji"], false)[0].text,
+        "哈达玛积"
+    );
+    std::fs::write(&path, "---\nname: broken\n...\nmissing pinyin\n").unwrap();
+    assert!(Dictionary::from_path(&path).is_err());
+    std::fs::remove_file(path).unwrap();
+    std::fs::remove_dir(dir).unwrap();
+}
+
 fn texts<'a>(matches: &'a [Match<'a>]) -> Vec<&'a str> {
     matches.iter().map(|m| m.text).collect()
 }

@@ -465,3 +465,9 @@ Windows 可选的 `[shortcut] toggle_punctuation` 经 `InputSettings` 下发，�
 Unix socket 用共享长度前缀与 Frame（当前公共版本 9，与 `PROTOCOL_VERSION` 同步，Fcitx5 插件里写死在 `qingjian.cpp` 的 OpenSession）；插件复用一条连接，每个上下文独立会话。Linux v3 扩展逐会话握手、确认 Sensitive/Password/Disable 后接受按下/释放、焦点和点击事实。
 候选回报绑定连接代次、上下文和服务端帧序号，仅当前聚焦页的有效释义进入 `note_displayed`，不把生成帧算作已展示。
 `[general] preedit` 使用已有 `both` / `inline` / `window`；没有新增 Linux 自绘配置。详见 [linux-fcitx5.md](linux-fcitx5.md)。
+
+## portable6 读取与系统绘制一致性
+
+`Dictionary::from_path` 统一识别 `.qj`、TSV 与 Rime YAML（含 UTF-8 BOM），YAML 保留名称且拒绝零条可用词条；新旧设置页和服务端共用此入口，避免设置页将 YAML 头当 TSV 误报损坏。`cargo run --release -p qingjian-dictionary --example audit -- <词库目录>` 逐份实际加载并输出条数。
+
+Windows GDI 通过 `Theme::palette_color` 复用所选主题的 `accent`、普通文字和 `hl_*` 色；带 alpha 的颜色先预混到普通或选中背景。独立候选与译文颜色分别覆盖所有语义变体，选中颜色未填时回退到普通自定义颜色，再回退主题。真实 GDI 内存位图回归覆盖竖排、倒序、横排、矩阵及云候选、生词、词性。独立候选和译文字体默认均为 Microsoft YaHei。

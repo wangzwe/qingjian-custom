@@ -5,22 +5,15 @@ use qingjian_platform::LayoutMode;
 use qingjian_platform::protocol::PreeditKind;
 use qingjian_render::{Row, Tone};
 use windows::Win32::Foundation::{COLORREF, RECT, SIZE};
-use windows::Win32::Graphics::Gdi::{
-    CreateRoundRectRgn, CreateSolidBrush, DeleteObject, FillRect, FillRgn, GetTextExtentPoint32W,
-    HDC, HFONT, SelectObject, SetBkMode, SetTextColor, TRANSPARENT, TextOutW,
-};
+use windows::Win32::Graphics::Gdi::{HDC, HFONT, SetBkMode, TRANSPARENT};
 
 use super::RenderData;
+use super::colors::{tone_color, word_color};
+use super::drawing::{
+    CLOUD_GLYPH, ELLIPSIS, MAX_CELL_EMS, fill_round_rect, line_height, scale_line,
+};
+pub(crate) use super::drawing::{draw_text, fill_rect, measure};
 use super::theme::Theme;
-
-/// 云端候选词前的小云朵（macOS 用 SF Symbol `cloud`）。
-const CLOUD_GLYPH: &str = "☁";
-
-/// 矩阵里一格里候选词最多多宽（按候选字宽的倍数；帧没给列宽时用），与 Core `Grid::column_ems` 的封顶一致。
-const MAX_CELL_EMS: f32 = 4.0;
-
-/// 超宽候选截尾补的省略号。
-const ELLIPSIS: &str = "…";
 
 /// 竖排的列宽与统一行高。
 struct Columns {
@@ -293,7 +286,11 @@ fn draw_rows(hdc: HDC, data: &RenderData, mut y: i32, width: i32) {
         draw_text(
             hdc,
             theme.index_font,
-            theme.index_color,
+            if i == data.highlight {
+                theme.highlight_index_color
+            } else {
+                theme.index_color
+            },
             theme.padding,
             baseline + small_offset,
             &row.index,
@@ -369,7 +366,11 @@ fn draw_horizontal(hdc: HDC, data: &RenderData, y: i32, width: i32) {
         draw_text(
             hdc,
             theme.index_font,
-            theme.index_color,
+            if i == data.highlight {
+                theme.highlight_index_color
+            } else {
+                theme.index_color
+            },
             x,
             baseline + small_offset,
             &row.index,
@@ -495,7 +496,11 @@ fn draw_matrix(hdc: HDC, data: &RenderData, y: i32, width: i32) {
             draw_text(
                 hdc,
                 theme.index_font,
-                theme.index_color,
+                if i == data.highlight {
+                    theme.highlight_index_color
+                } else {
+                    theme.index_color
+                },
                 x,
                 baseline + small_offset,
                 &row.index,
@@ -758,21 +763,17 @@ fn draw_word(
     selected: bool,
 ) -> i32 {
     let prefix = cloud_prefix_width(hdc, theme, row);
-    let color = if row.cloud {
+    let color = word_color(theme, row.cloud, selected);
+    if row.cloud {
         draw_text(
             hdc,
             theme.annotation_font,
-            theme.cloud_color,
+            color,
             x,
             baseline + small_offset,
             CLOUD_GLYPH,
         );
-        theme.cloud_color
-    } else if selected {
-        theme.highlight_text_color
-    } else {
-        theme.text_color
-    };
+    }
     let mut width =
         prefix + draw_text(hdc, theme.text_font, color, x + prefix, baseline, &row.text);
     if let Some(code) = &row.code {
@@ -788,17 +789,6 @@ fn draw_word(
     width
 }
 
-fn tone_color(theme: &Theme, tone: Tone, selected: bool) -> COLORREF {
-    match tone {
-        Tone::Gloss if selected => theme.highlight_gloss_color,
-        Tone::Gloss => theme.gloss_color,
-        Tone::Fresh => theme.fresh_color,
-        Tone::Faint | Tone::Pos | Tone::Separator => theme.pos_color,
-        Tone::Code if selected => theme.highlight_gloss_color,
-        Tone::Code => theme.gloss_color,
-    }
-}
-
 /// 拼音行光标前 `cursor` 个字符。
 fn concat_before_cursor(preedit: &[(String, PreeditKind)], cursor: usize) -> String {
     preedit
@@ -806,62 +796,4 @@ fn concat_before_cursor(preedit: &[(String, PreeditKind)], cursor: usize) -> Str
         .flat_map(|(text, _)| text.chars())
         .take(cursor)
         .collect()
-}
-
-/// 画一段文字，`(x, y)` 是左上角，返回宽度。调用方先 `SetBkMode(TRANSPARENT)`。
-pub(crate) fn draw_text(hdc: HDC, font: HFONT, color: COLORREF, x: i32, y: i32, text: &str) -> i32 {
-    let utf16: Vec<u16> = text.encode_utf16().collect();
-    let mut size = SIZE::default();
-    unsafe {
-        SelectObject(hdc, font.into());
-        SetTextColor(hdc, color);
-        let _ = TextOutW(hdc, x, y, &utf16);
-        let _ = GetTextExtentPoint32W(hdc, &utf16, &mut size);
-    }
-    size.cx
-}
-
-pub(crate) fn measure(hdc: HDC, font: HFONT, text: &str) -> SIZE {
-    let utf16: Vec<u16> = text.encode_utf16().collect();
-    let mut size = SIZE::default();
-    unsafe {
-        SelectObject(hdc, font.into());
-        let _ = GetTextExtentPoint32W(hdc, &utf16, &mut size);
-    }
-    size
-}
-
-fn line_height(hdc: HDC, font: HFONT) -> i32 {
-    measure(hdc, font, "x").cy
-}
-
-/// 细线 / 光标的粗细，随 DPI 放大。
-fn scale_line(theme: &Theme) -> i32 {
-    (theme.padding / 8).max(1)
-}
-
-pub(crate) fn fill_rect(hdc: HDC, rect: RECT, color: COLORREF) {
-    unsafe {
-        let brush = CreateSolidBrush(color);
-        FillRect(hdc, &rect, brush);
-        let _ = DeleteObject(brush.into());
-    }
-}
-
-fn fill_round_rect(hdc: HDC, rect: RECT, color: COLORREF, radius: i32) {
-    let diameter = (radius * 2).max(1);
-    unsafe {
-        let region = CreateRoundRectRgn(
-            rect.left,
-            rect.top,
-            rect.right,
-            rect.bottom,
-            diameter,
-            diameter,
-        );
-        let brush = CreateSolidBrush(color);
-        let _ = FillRgn(hdc, region, brush);
-        let _ = DeleteObject(brush.into());
-        let _ = DeleteObject(region.into());
-    }
 }

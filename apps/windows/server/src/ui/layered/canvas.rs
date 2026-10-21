@@ -9,7 +9,7 @@ use windows::core::{Error, Result};
 
 /// 一张 top-down 32bpp DIB 与选进了它的内存 DC。像素只能经 [`Self::pixels`]（`&mut self`）访问，
 /// 保证 GDI 在画的时候没有 Rust 侧切片指着同一块内存。
-pub(super) struct Canvas {
+pub(in crate::ui) struct Canvas {
     dib: HBITMAP,
     memdc: HDC,
     previous: HGDIOBJ,
@@ -18,7 +18,7 @@ pub(super) struct Canvas {
 }
 
 impl Canvas {
-    pub(super) fn new(w: i32, h: i32) -> Result<Self> {
+    pub(in crate::ui) fn new(w: i32, h: i32) -> Result<Self> {
         let header = BITMAPINFOHEADER {
             biSize: core::mem::size_of::<BITMAPINFOHEADER>() as u32,
             biWidth: w,
@@ -54,12 +54,12 @@ impl Canvas {
         })
     }
 
-    pub(super) fn dc(&self) -> HDC {
+    pub(in crate::ui) fn dc(&self) -> HDC {
         self.memdc
     }
 
     /// 像素（BGRA，top-down）。先 `GdiFlush` 把批量的 GDI 调用落到位图上。
-    pub(super) fn pixels(&mut self) -> &mut [u8] {
+    pub(in crate::ui) fn pixels(&mut self) -> &mut [u8] {
         // SAFETY: 缓冲由 CreateDIBSection 分配、w*h*4 字节连续、随 dib 存活；`&mut self` 保证独占。
         unsafe {
             let _ = GdiFlush();

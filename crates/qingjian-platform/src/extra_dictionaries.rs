@@ -8,7 +8,7 @@ use crate::DictionariesConfig;
 use qingjian_dictionary::Dictionary;
 
 /// 目录里能加载的扩展名，靠前的优先：同名的 `.qj`、`.tsv` 与 Rime YAML 只取优先级最高的一个。
-const EXTENSIONS: [&str; 4] = ["qj", "tsv", "dict.yaml", "yaml"];
+const EXTENSIONS: [&str; 5] = ["qj", "tsv", "dict.yaml", "yaml", "yml"];
 
 /// 可加载文件的快照：用于发现新增、移除与同名更新，不读取词库正文。
 pub fn snapshot(dir: &Path) -> Vec<(PathBuf, Option<SystemTime>, u64)> {
@@ -83,21 +83,7 @@ pub fn load(
 }
 
 fn open(stem: &str, path: &Path) -> Option<Dictionary> {
-    let result = if path
-        .file_name()
-        .and_then(|name| name.to_str())
-        .is_some_and(|name| {
-            name.to_ascii_lowercase().ends_with(".dict.yaml")
-                || name.to_ascii_lowercase().ends_with(".yaml")
-        }) {
-        std::fs::read_to_string(path)
-            .map(|text| qingjian_dictionary::import::to_tsv(&text).tsv)
-            .map_err(qingjian_dictionary::DictionaryError::from)
-            .and_then(|tsv| Dictionary::parse(&tsv))
-    } else {
-        Dictionary::from_path(path)
-    };
-    match result {
+    match Dictionary::from_path(path) {
         Ok(dictionary) => {
             tracing::info!(
                 name = %dictionary.metadata().map_or(stem, |m| m.name.as_str()),
