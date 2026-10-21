@@ -29,12 +29,11 @@ python apps/windows/portable/package.py --stage target/portable4-stage --guide d
 python apps/windows/portable/package.py --archive target/portable4-stage/Qingjian-custom3-portable4 --output target/qingjian-custom3-portable4-windows-x86_64.zip
 ```
 
-便携包的两份注册 DLL 固定使用 `qingjian_tsf-custom3-portable1.dll` 与 `qingjian_tsf-custom3-portable1-x86.dll`，并由启停脚本检查相同名称。包内 `userdata/dicts` 仅允许发布清单中的 9 份词库文件；禁止加入个人配置、学习数据或其他文件。重新生成 `MANIFEST-SHA256.txt` 后，再压成 ZIP 并计算外层 SHA256。
+便携包的两份注册 DLL 固定使用 `qingjian_tsf-custom3-portable1.dll` 与 `qingjian_tsf-custom3-portable1-x86.dll`，并由启停脚本检查相同名称。包内 `userdata/dicts` 默认含指定目录中的 9 份词库；允许保留此前的万象数学补充词库及词库说明。`userdata/user-glossary-en.tsv` 是用户的英语译文词库，也会随既有便携包保留。禁止加入个人配置、学习数据或其他文件。重新生成 `MANIFEST-SHA256.txt` 后，再压成 ZIP 并计算外层 SHA256。
 
 向他人发布前，将 CUSTOM-NOTICE.md、GPL LICENSE 和第三方组件的许可/署名文件
 放进便携包，并在同一个 Release 提供本标签的完整源码及 SHA256 校验值。
-公开发布包比初版便携 ZIP 多了许可和来源说明，程序二进制不变。
-包内 userdata 必须只有说明文件；打包脚本会拒绝包含实际用户文件的目录。
+发布包包含 GPL 许可、第三方许可、词库来源说明、用户英语译文词库和所选词库；打包脚本拒绝未列入白名单的个人文件。
 
 安装器构建参考 `apps/windows/installer/build.ps1` 和 `qingjian.iss`；
 本次 Release 只提供便携二进制，避免把旧的安装包误认为便携版。

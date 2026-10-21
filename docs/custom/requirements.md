@@ -149,12 +149,13 @@ translation_pos = true
 | 第一版 custom1 | 独立文字样式、竖排倒序、与光标间距 | [第一版安装说明](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable1) |
 | 第二版 custom2 | 倒序方向键修正、背景、阴影、留白、上下居中 | [第二版安装说明](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable1) |
 | 第三版 custom3 | 固定中英文间距、布局切换、词性位置 | [第三版安装说明](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable1) |
+| 第四版 custom3-portable4 | 系统绘制完整设置、默认外观值、中文默认模式和 9 份便携词库 | [第四版 Release](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable4) |
 
 第四版基于第三版增加默认外观配置、系统绘制下的完整设置支持及便携词库导入；无需依次安装前三版：
 
-- [第三版 Windows 安装包](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable1)，约 146.3 MiB。
-- [第三版累计源码补丁](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable1)。
-- [第三版 SHA-256 校验文件](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable1)。
+- [第四版 Windows 便携包](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable4)。
+- [第四版累计源码补丁](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable4)。
+- [第四版 SHA-256 校验文件](https://github.com/wangzwe/qingjian-custom/releases/tag/custom3-portable4)。
 
 安装器版本为 `0.2.2-dev-c97ff2b-custom3`。程序「关于」可能仍显示源码基础开发版本号，可通过新增的「译文排布」设置区辨认第三版。
 
@@ -162,11 +163,11 @@ translation_pos = true
 
 ### 补丁应用方法
 
-第三版补丁包含前三版全部修改，应应用到上述基准提交的干净源码上，不要再叠加到已经应用第一版或第二版补丁的目录中。本次工作目录已经完成修改，不需要重复应用。
+第四版补丁包含此前全部定制，应应用到上述基准提交的干净源码上，不要再叠加到已有定制的目录中。本次工作目录已经完成修改，不需要重复应用。
 
 ```powershell
-git apply --check C:\path\to\qingjian-customization-v3.patch
-git apply C:\path\to\qingjian-customization-v3.patch
+git apply --check C:\path\to\qingjian-customization-portable4.patch
+git apply C:\path\to\qingjian-customization-portable4.patch
 ```
 
 ## 5. GitHub Issue 跟踪
